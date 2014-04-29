@@ -1,0 +1,5 @@
+#!/bin/bash
+make
+make run INPUT=$1 OUTPUT=teste.s
+#make bytecode INPUT=teste.s OUTPUT=teste.bc
+#lli teste.bc
