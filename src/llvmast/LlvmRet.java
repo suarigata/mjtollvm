@@ -4,9 +4,8 @@ public class LlvmRet extends LlvmInstruction{
 	public LlvmRet(LlvmValue v){
 		this.v = v;
 	}
-
+	
 	public String toString(){
 		return "  ret " + v.type + " " + v;
 	}
-
 }

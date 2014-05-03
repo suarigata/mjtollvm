@@ -4,8 +4,11 @@ public  class LlvmIcmp extends LlvmInstruction{
 	public LlvmType type;
 	public LlvmValue op1, op2;
 	public int conditionCode;
+	
+	public static final int EQ=0;
+	public static final int ULT=4;
 	public static final String[] cond = {"eq","ne","ugt","uge","ult","ule","sgt","sge","slt","sle"};
-
+	
 	public LlvmIcmp(LlvmRegister lhs,  int conditionCode, LlvmType type, LlvmValue op1, LlvmValue op2){
 		this.lhs = lhs;
 		this.type = type;

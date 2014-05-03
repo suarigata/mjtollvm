@@ -1,4 +1,5 @@
 package llvmast;
+
 public class LlvmNamedValue extends LlvmRegister{
 
 	public LlvmNamedValue(String name, LlvmType type){

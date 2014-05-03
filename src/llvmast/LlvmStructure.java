@@ -2,7 +2,7 @@ package llvmast;
 import java.util.*;
 
 import syntaxtree.VarDecl;
-public class LlvmStructure extends LlvmType{
+public class LlvmStructure extends LlvmInstruction{
 	public int sizeByte;
 	public List<LlvmType> typeList;
 	public String className;
@@ -10,7 +10,7 @@ public class LlvmStructure extends LlvmType{
 	public LlvmStructure(List<LlvmType> typeList,String className){
 		this.typeList = typeList;
 		this.className = "%class." + className;
-
+		
 		// Fazendo a contagem do tamanho da estrutura, caso precise de Malloc
 		for (LlvmType T : typeList){
 			if ( T instanceof LlvmPointer ){ 
@@ -26,8 +26,8 @@ public class LlvmStructure extends LlvmType{
 			}
 		}
 	}
-
-	public String createInstruction(){
+	
+	public String toString(){
 		String S;
 		
 		if (typeList.isEmpty())
@@ -40,10 +40,10 @@ public class LlvmStructure extends LlvmType{
 			S += " }";
 		}
 		
-		return "  " + this.className + " = type " + S;
+		return this.className + " = type " + S;
 	}
 	
-	public String toString(){
+	public String typeName(){
 			return className;
 	}
 }

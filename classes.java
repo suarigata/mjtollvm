@@ -2,7 +2,7 @@ class a
 {
     public static void main(String[] args)
     {
-    	System.out.println(1*2);
+    	System.out.println(1);
     }
 }
 
@@ -12,13 +12,18 @@ class b{
 }
 
 class c{
-	int c1;
+	b c1;
 	int c2;
 	public int ola(int oi){
-		int io;
-		c2=1;
-		io=oi;
-		//c1=new b();
-		return 0;
+		boolean ola;
+		ola=false;
+		return c2;
 	}
+}
+
+class d{
+	boolean d1;
+	int d2;
+	c d3;
+	int d4;
 }
