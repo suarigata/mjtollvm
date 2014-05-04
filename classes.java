@@ -16,14 +16,16 @@ class c{
 	int c2;
 	public int ola(int oi){
 		boolean ola;
-		ola=false;
+		int o;
+		c2=7;
 		return c2;
 	}
 }
 
-class d{
+class d extends c{
 	boolean d1;
 	int d2;
 	c d3;
 	int d4;
+	int c2;
 }

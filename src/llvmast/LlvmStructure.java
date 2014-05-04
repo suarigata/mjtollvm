@@ -2,16 +2,17 @@ package llvmast;
 import java.util.*;
 
 import syntaxtree.VarDecl;
-public class LlvmStructure extends LlvmInstruction{
+public class LlvmStructure extends LlvmType{
 	public int sizeByte;
 	public List<LlvmType> typeList;
 	public String className;
 	
 	public LlvmStructure(List<LlvmType> typeList,String className){
 		this.typeList = typeList;
-		this.className = "%class." + className;
+		this.className = "%class." + className; // TODO talvez so armazenar o nome
 		
 		// Fazendo a contagem do tamanho da estrutura, caso precise de Malloc
+		// if(typeList!=null)
 		for (LlvmType T : typeList){
 			if ( T instanceof LlvmPointer ){ 
 				sizeByte += 8;
@@ -28,6 +29,10 @@ public class LlvmStructure extends LlvmInstruction{
 	}
 	
 	public String toString(){
+		return this.className;
+	}
+	
+	public LlvmClass getInstruction(){
 		String S;
 		
 		if (typeList.isEmpty())
@@ -39,11 +44,37 @@ public class LlvmStructure extends LlvmInstruction{
 			}
 			S += " }";
 		}
-		
-		return this.className + " = type " + S;
+		return new LlvmClass(this.className + " = type " + S);
 	}
 	
-	public String typeName(){
-			return className;
+	public int getOffset(int offset){
+		int memOffset=0;
+		for(LlvmType T: typeList)
+			if(--offset>0){
+				if ( T instanceof LlvmPointer ){ 
+					memOffset += 8;
+				} else {
+					if ( T instanceof LlvmPrimitiveType){
+						if (T.toString().equals("i32")){
+							memOffset += 4;
+						} else {
+							memOffset += 1;
+						}
+					}
+				}
+			}
+			else
+				break;
+		return memOffset;
+	}
+	
+	class LlvmClass extends LlvmInstruction{
+		public String definition;
+		public LlvmClass(String definition){
+			this.definition=definition;
+		}
+		public String toString(){
+			return this.definition;
+		}
 	}
 }
