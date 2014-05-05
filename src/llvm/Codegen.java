@@ -260,8 +260,11 @@ public class Codegen extends VisitorAdapter{
 	
 	public LlvmValue visit(VarDecl n){
 		System.out.println("VarDecl"); // ok
+		
+		LlvmType type=(LlvmType)n.type.accept(this);
+		
 		return new LlvmNamedValue(
-				n.name.accept(this).toString(),(LlvmType)n.type.accept(this));
+				n.name.accept(this).toString(),type);
 	}
 	
 	public LlvmValue visit(MethodDecl n){
@@ -289,7 +292,7 @@ public class Codegen extends VisitorAdapter{
 		LlvmNamedValue var=null;
 		while(f!=null){
 			var=(LlvmNamedValue)f.head.accept(this);
-			regVar=new LlvmRegister(new LlvmPointer(var.type));
+			regVar=new LlvmRegister(new LlvmPointer(var.type)); // TODO pode ser que receba vetores. Aí tem que ver.
 			assembler.add(new LlvmAlloca(regVar, var.type));
 			assembler.add(new LlvmStore(var, regVar));
 			localVars.put(var.name,regVar);
@@ -299,9 +302,11 @@ public class Codegen extends VisitorAdapter{
 		util.List<VarDecl> l=n.locals; // locals
 		while(l!=null){
 			var=(LlvmNamedValue)l.head.accept(this);
-			regVar=new LlvmRegister(new LlvmPointer(var.type));
-			assembler.add(new LlvmAlloca(regVar, var.type));
-			localVars.put(var.name,regVar);
+			if(!(var.type instanceof LlvmArray)){ // TODO aqui acho que é pra barrar o alloca quando for intArrayType ------------ aqui
+				regVar=new LlvmRegister(new LlvmPointer(var.type));
+				assembler.add(new LlvmAlloca(regVar, var.type));
+				localVars.put(var.name,regVar);
+			}
 			l=l.tail;
 		}
 		
@@ -342,8 +347,7 @@ public class Codegen extends VisitorAdapter{
 	
 	public LlvmValue visit(IntArrayType n){
 		System.out.println("IntArrayType");
-		
-		return null;
+		return new LlvmArray(0, LlvmPrimitiveType.I32); // TODO tratar o tamanho
 	}
 	
 	public LlvmValue visit(BooleanType n){
@@ -358,7 +362,7 @@ public class Codegen extends VisitorAdapter{
 	
 	public LlvmType visit(IdentifierType n){
 		System.out.println("IdentifierType"); // ok
-		return new LlvmPointer(new LlvmStructure(new ArrayList<LlvmType>(),n.name)); // TODO pegar a structure do pool
+		return new LlvmPointer(new LlvmStructure(new ArrayList<LlvmType>(),n.name)); // TODO pegar a structure do pool?
 	}
 	
 	public LlvmValue visit(Block n){
@@ -404,18 +408,17 @@ public class Codegen extends VisitorAdapter{
 	}
 	
 	public LlvmValue visit(Assign n){
-		System.out.println("Assign");
+		System.out.println("Assign"); // ok
 		
-		//assembler.add(new LlvmLoad(lhs, address))
-		LlvmRegister var=getVar(n.var.accept(this).toString(), this.currentClass);
-		assembler.add(new LlvmStore(n.exp.accept(this), var));
-		
-		System.out.println("Classe: "+this.currentClass);
-		System.out.println("var: "+n.var.accept(this).toString());
-		System.out.println("expressao: "+n.exp.accept(this));
-		System.out.println("ponteiro: "+var);
-		System.out.println("instrussaum: "+new LlvmStore(n.exp.accept(this), var));
-		
+		LlvmValue exp=n.exp.accept(this);
+		LlvmValue name=n.var.accept(this);
+		if(exp.type instanceof LlvmPointer && ((LlvmPointer)(exp.type)).content instanceof LlvmArray){
+			localVars.put(name.toString(),(LlvmRegister)exp);
+		}
+		else{
+			LlvmRegister var=getVar(name.toString(), this.currentClass);
+			assembler.add(new LlvmStore(exp, var));
+		}
 		return null;
 	}
 	
@@ -485,7 +488,7 @@ public class Codegen extends VisitorAdapter{
 	public LlvmValue visit(ArrayLength n){
 		System.out.println("ArrayLength");
 		
-		return null;
+		return n.array.accept(this);
 	}
 	
 	public LlvmValue visit(Call n){
@@ -521,17 +524,25 @@ public class Codegen extends VisitorAdapter{
 	}
 	
 	public LlvmValue visit(NewArray n){
-		System.out.println("NewArray");
-		return null;
+		System.out.println("NewArray"); // ok
+		
+		LlvmValue size=n.size.accept(this);
+		LlvmType type=(LlvmType)n.type.accept(this);
+		((LlvmArray)type).length=Integer.parseInt(size.toString());
+		
+		LlvmRegister lhs=new LlvmRegister(new LlvmPointer(type));
+		assembler.add(new LlvmMalloc(lhs,type,size));
+		
+		return lhs;
 	}
 	
 	public LlvmValue visit(NewObject n){
-		System.out.println("NewObject");
+		System.out.println("NewObject"); // ok
 		
-		System.out.println("nome classe: "+n.className);
-		System.out.println("tipo: "+n.type);
-		
-		return null;
+		LlvmStructure classe=classes.get(n.className.toString());
+		LlvmRegister lhs=new LlvmRegister(classe);
+		assembler.add(new LlvmMalloc(lhs, classe, classe.className));
+		return lhs;
 	}
 	
 	public LlvmValue visit(Not n){

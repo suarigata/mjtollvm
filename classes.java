@@ -17,7 +17,7 @@ class c{
 	public int ola(int oi){
 		boolean ola;
 		int o;
-		c2=7;
+		c2=o;
 		return c2;
 	}
 }
