@@ -135,9 +135,9 @@ public class Codegen extends VisitorAdapter{
 			System.out.println(name);
 			if(this.env.classes.get(Symbol.symbol(className)).attributes.containsKey(Symbol.symbol(name))){
 				ClassInfo classe=this.env.classes.get(Symbol.symbol(className));
-				LlvmType type=(LlvmType)classe.attributes.get(Symbol.symbol(name)).type.accept(this);
-				lhs=new LlvmRegister(new LlvmPointer(type));
 				int offset=classe.getAttributeOffset(Symbol.symbol(name))-1; // TODO será?
+				LlvmType type=classes.get(className).typeList.get(offset);
+				lhs=new LlvmRegister(new LlvmPointer(type));
 				// offset=this.classes.get(classe).getOffset(offset); TODO acho que não precisa acessar por bytes o offset
 				List<LlvmValue> offsets=new ArrayList<LlvmValue>();
 				offsets.add(new LlvmRegister(0+"", type));
@@ -302,11 +302,11 @@ public class Codegen extends VisitorAdapter{
 		util.List<VarDecl> l=n.locals; // locals
 		while(l!=null){
 			var=(LlvmNamedValue)l.head.accept(this);
-			if(!(var.type instanceof LlvmArray)){ // TODO aqui acho que é pra barrar o alloca quando for intArrayType ------------ aqui
+			//if(!(var.type instanceof LlvmArray)){ // TODO aqui acho que é pra barrar o alloca quando for intArrayType ------------ aqui
 				regVar=new LlvmRegister(new LlvmPointer(var.type));
 				assembler.add(new LlvmAlloca(regVar, var.type));
 				localVars.put(var.name,regVar);
-			}
+			//}
 			l=l.tail;
 		}
 		
@@ -413,7 +413,9 @@ public class Codegen extends VisitorAdapter{
 		LlvmValue exp=n.exp.accept(this);
 		LlvmValue name=n.var.accept(this);
 		if(exp.type instanceof LlvmPointer && ((LlvmPointer)(exp.type)).content instanceof LlvmArray){
-			localVars.put(name.toString(),(LlvmRegister)exp);
+			LlvmRegister var=getVar(name.toString(), this.currentClass);
+			((LlvmArray)((LlvmPointer)(var.type)).content).length=((LlvmArray)((LlvmPointer)(exp.type)).content).length;
+			System.out.println(exp.type);
 		}
 		else{
 			LlvmRegister var=getVar(name.toString(), this.currentClass);

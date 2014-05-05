@@ -6,6 +6,7 @@ class a{
 
 class b{
 	int oi;
+	int[] erro;
 
 	public int soma(int a,int b){
 		return a+b;
@@ -16,6 +17,8 @@ class b{
 		int[] b;
 		boolean beu;
 		b=new int[2];
+		b=new int[3];
+		erro=new int[3];
 		return 0;
 	}
 }
