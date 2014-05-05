@@ -413,7 +413,7 @@ public class Codegen extends VisitorAdapter{
 	}
 	
 	public LlvmValue visit(Assign n){
-		System.out.println("Assign"); // ok
+		System.out.println("Assign");
 		
 		LlvmValue exp=n.exp.accept(this);
 		LlvmValue name=n.var.accept(this);
@@ -446,15 +446,13 @@ public class Codegen extends VisitorAdapter{
 	public LlvmValue visit(ArrayAssign n){
 		System.out.println("ArrayAssign");
 		
-		
-		
 		LlvmValue i=n.index.accept(this);
 		LlvmValue vetorName=n.var.accept(this);
 		LlvmValue valor=n.value.accept(this);
 		LlvmRegister vetor=getVar(vetorName.toString(), currentClass);
 		LlvmRegister lhs=new LlvmRegister(vetor.type);
 		List<LlvmValue> offsets=new ArrayList<LlvmValue>();
-		offsets.add(new LlvmRegister(i+"", ((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content )); // TODO ver lá no getVar se muda o tipo que pega
+		offsets.add(new LlvmRegister(i+"", ((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content )); // TODO ver la no getVar se muda o tipo que pega
 		// offsets.add(new LlvmRegister(0+"", ((LlvmArray)(vetor.type)).content));
 		assembler.add(new LlvmGetElementPointer(lhs, vetor, offsets));
 		assembler.add(new LlvmStore(valor, lhs));
@@ -515,11 +513,21 @@ public class Codegen extends VisitorAdapter{
 	public LlvmValue visit(ArrayLookup n){
 		System.out.println("ArrayLookup");
 		
-		return null;
+		LlvmValue i=n.index.accept(this);
+		LlvmValue vetorName=n.array.accept(this);
+		LlvmRegister vetor=getVar(vetorName.toString(), currentClass);
+		LlvmRegister pt=new LlvmRegister(vetor.type);
+		List<LlvmValue> offsets=new ArrayList<LlvmValue>();
+		offsets.add(new LlvmRegister(i+"", ((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content ));
+		// offsets.add(new LlvmRegister(0+"", ((LlvmArray)(vetor.type)).content));
+		assembler.add(new LlvmGetElementPointer(pt, vetor, offsets));
+		LlvmRegister lhs=new LlvmRegister(((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content);
+		assembler.add(new LlvmLoad(lhs, pt));
+		return lhs;
 	}
 	
 	public LlvmValue visit(ArrayLength n){
-		System.out.println("ArrayLength");
+		System.out.println("ArrayLength"); // ok
 		
 		return n.array.accept(this);
 	}
@@ -527,10 +535,38 @@ public class Codegen extends VisitorAdapter{
 	public LlvmValue visit(Call n){
 		System.out.println("Call");
 		
+		String name=n.method.accept(this).toString().substring(2);
+		LlvmValue obj=n.object.accept(this);
+		name="@__"+name+"_"+obj.type.toString().substring(7);
 		
-		// n.actuals; // TODO o que Ã©?
+		System.out.println("method: "+name);
+		
+		ArrayList<LlvmValue> params=new ArrayList<LlvmValue>();
+		util.List<Exp> actuals=n.actuals;
+		params.add(obj);
+		while(actuals!=null){
+			System.out.println("oi oi");
+			params.add(actuals.head.accept(this));
+			actuals=actuals.tail;
+			System.out.println(params.get(0));
+		}
+		
+		System.out.println(name);
+		
+		LlvmType type=(LlvmType)n.type.accept(this);
+		System.out.println(type);
 		
 		
+		
+		List<LlvmType> pts = new LinkedList<LlvmType>();
+		pts.add(new LlvmPointer(LlvmPrimitiveType.I8));
+		
+		assembler.add(new LlvmCall(new LlvmRegister(type),
+				type,
+				pts,				 
+				name,
+				params
+				));
 		return null;
 	}
 	
