@@ -1,6 +1,6 @@
 @.formatting.string = private constant [4 x i8] c"%d\0A\00"
-%class.a = type { }
 %class.b = type { i32, [0 x i32] }
+%class.a = type { }
 define i32 @main() {
 entry:
   %tmp0 = alloca i32
@@ -33,7 +33,10 @@ entry:
   %tmp17 = mul i32 1, 3
   %tmp18 = call i8* @malloc ( i32 %tmp17)
   %tmp16 = bitcast i8* %tmp18 to [3 x i32]*
-  %tmp19 = getelementptr %class.b * %this, [3 x i32] 0, [3 x i32] 1
+  %tmp19 = getelementptr %class.b * %this, [4 x i32] 0, [4 x i32] 1
+  %tmp20 = getelementptr %class.b * %this, [4 x i32] 0, [4 x i32] 1
+  %tmp21 = getelementptr [4 x i32] * %tmp20, i32 2
+  store i32 9, [4 x i32] * %tmp21
   ret i32 0
 }
 declare i32 @printf (i8 *, ...)

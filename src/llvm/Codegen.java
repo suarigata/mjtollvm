@@ -92,6 +92,7 @@ public class Codegen extends VisitorAdapter{
 		Enumeration<Symbol> keys=env.classes.keys();
 		LlvmStructure classe;
 		ClassInfo classInfo;
+		LlvmType type;
 		while(keys.hasMoreElements()){
 			classInfo=env.classes.get((Symbol) keys.nextElement()); // pega cada classe
 			
@@ -104,7 +105,11 @@ public class Codegen extends VisitorAdapter{
 			ArrayList<LlvmType> typeList=new ArrayList<LlvmType>(); // TODO pode checar se é a MainClass para não gerar
 			for (Symbol atributo : classInfo.attributesOrder){ // pega as variaveis ordenadas e preenche uma lista de tipos
 				VarInfo varInfo=classInfo.attributes.get(atributo);
-				typeList.add((LlvmType)varInfo.type.accept(this));
+				type=(LlvmType)varInfo.type.accept(this);
+//				if(type instanceof LlvmArray)
+//					typeList.add(new LlvmPointer(LlvmPrimitiveType.VOID)); // TODO
+//				else
+					typeList.add(type);
 //				System.out.println("access: "+varInfo.access);
 //				System.out.println("name: "+varInfo.name);
 			}
@@ -131,14 +136,14 @@ public class Codegen extends VisitorAdapter{
 		if(localVars.containsKey(name))
 			lhs=localVars.get(name);
 		else{
-			name=name.substring(2);
-			System.out.println(name);
+			name=name.substring(2); // tirando prefixo
 			if(this.env.classes.get(Symbol.symbol(className)).attributes.containsKey(Symbol.symbol(name))){
 				ClassInfo classe=this.env.classes.get(Symbol.symbol(className));
-				int offset=classe.getAttributeOffset(Symbol.symbol(name))-1; // TODO será?
+				int offset=classe.getAttributeOffset(Symbol.symbol(name))-1;
 				LlvmType type=classes.get(className).typeList.get(offset);
 				lhs=new LlvmRegister(new LlvmPointer(type));
 				// offset=this.classes.get(classe).getOffset(offset); TODO acho que não precisa acessar por bytes o offset
+				((LlvmArray)type).length=4;
 				List<LlvmValue> offsets=new ArrayList<LlvmValue>();
 				offsets.add(new LlvmRegister(0+"", type));
 				offsets.add(new LlvmRegister(offset+"", type));
@@ -413,8 +418,22 @@ public class Codegen extends VisitorAdapter{
 		LlvmValue exp=n.exp.accept(this);
 		LlvmValue name=n.var.accept(this);
 		if(exp.type instanceof LlvmPointer && ((LlvmPointer)(exp.type)).content instanceof LlvmArray){
+			
+			//System.out.println("tamanho alocado: "+((LlvmArray)((LlvmPointer)(exp.type)).content).length);
+			
 			LlvmRegister var=getVar(name.toString(), this.currentClass);
+			
+			//System.out.println("tamanho pego: "+((LlvmArray)((LlvmPointer)(var.type)).content).length);
+			
 			((LlvmArray)((LlvmPointer)(var.type)).content).length=((LlvmArray)((LlvmPointer)(exp.type)).content).length;
+			
+			System.out.println("tamanho gravado: "+((LlvmArray)((LlvmPointer)(var.type)).content).length);
+			
+			ClassInfo classe=this.env.classes.get(Symbol.symbol(currentClass));
+			int offset=classe.getAttributeOffset(Symbol.symbol("erro"))-1;
+			LlvmType type=classes.get(currentClass).typeList.get(offset);
+			System.out.println("tipo que peguei depois de tentar mudar: "+type);
+			
 			System.out.println(exp.type);
 		}
 		else{
@@ -427,6 +446,18 @@ public class Codegen extends VisitorAdapter{
 	public LlvmValue visit(ArrayAssign n){
 		System.out.println("ArrayAssign");
 		
+		
+		
+		LlvmValue i=n.index.accept(this);
+		LlvmValue vetorName=n.var.accept(this);
+		LlvmValue valor=n.value.accept(this);
+		LlvmRegister vetor=getVar(vetorName.toString(), currentClass);
+		LlvmRegister lhs=new LlvmRegister(vetor.type);
+		List<LlvmValue> offsets=new ArrayList<LlvmValue>();
+		offsets.add(new LlvmRegister(i+"", ((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content )); // TODO ver l� no getVar se muda o tipo que pega
+		// offsets.add(new LlvmRegister(0+"", ((LlvmArray)(vetor.type)).content));
+		assembler.add(new LlvmGetElementPointer(lhs, vetor, offsets));
+		assembler.add(new LlvmStore(valor, lhs));
 		
 		return null;
 	}
