@@ -51,6 +51,7 @@ public class Codegen extends VisitorAdapter{
 	private HashMap<String, LlvmRegister> localVars;
 	private HashMap<String, LlvmStructure>classes;
 	private LlvmRegister thisReg;
+	private LlvmArray classArrayType;
 	
 	public Codegen(){
 		assembler = new LinkedList<LlvmInstruction>();
@@ -84,8 +85,6 @@ public class Codegen extends VisitorAdapter{
 			System.out.println(instr); // TODO coments esse debug lindo
 			r += instr+"\n";
 		}
-		
-		System.out.println(r); // TODO Exibição do programr gerado. Tirar quando pronto.
 		
 		return r;
 	}
@@ -187,17 +186,7 @@ public class Codegen extends VisitorAdapter{
 		assembler.add(new LlvmCloseDefinition());
 		return null;
 	}
-
-	public LlvmValue visit(Plus n){
-		System.out.println("Plus");
-		
-		LlvmValue v1 = n.lhs.accept(this);
-		LlvmValue v2 = n.rhs.accept(this);
-		LlvmRegister lhs = new LlvmRegister(LlvmPrimitiveType.I32);
-		assembler.add(new LlvmPlus(lhs,LlvmPrimitiveType.I32,v1,v2));
-		return lhs;
-	}
-
+	
 	public LlvmValue visit(Print n){
 		System.out.println("Print");
 		
@@ -219,24 +208,20 @@ public class Codegen extends VisitorAdapter{
 		pts = new LinkedList<LlvmType>();
 		pts.add(new LlvmPointer(LlvmPrimitiveType.I8));
 		pts.add(LlvmPrimitiveType.DOTDOTDOT);
-
+		
+		System.out.println("-----------------------------------------------"+args);
+		
 		// printf:
 		assembler.add(new LlvmCall(new LlvmRegister(LlvmPrimitiveType.I32),
 				LlvmPrimitiveType.I32,
-				pts,				 
+				pts,
 				"@printf",
 				args
 				));
 		return null;
 	}
 	
-	public LlvmValue visit(IntegerLiteral n){
-		System.out.println("IntegerLiteral");
-		
-		return new LlvmIntegerLiteral(n.value);
-	};
-	
-	// Todos os visit's que devem ser implementados TODO	
+	// Todos os visit's que devem ser implementados ---------------------------------------------------------------------------------------
 	public LlvmValue visit(ClassDeclSimple n){
 		System.out.println("ClassDeclSimple"); // ok
 		
@@ -263,6 +248,12 @@ public class Codegen extends VisitorAdapter{
 			m=m.tail;
 		}
 		return null;
+	}
+	
+	public LlvmValue visit(Formal n){
+		System.out.println("Formal"); // ok
+		return new LlvmNamedValue(
+				n.name.accept(this).toString(),(LlvmType)n.type.accept(this));
 	}
 	
 	public LlvmValue visit(VarDecl n){
@@ -337,201 +328,16 @@ public class Codegen extends VisitorAdapter{
 //		assembler.add(new LlvmRet(R2));
 		LlvmValue retorno=n.returnExp.accept(this); // TODO se for var, tem que buscar conteudo parei aqui -------------------------------
 		// ver se não pode pegar o valor já nuns métodos pra dentro, mas pode ser que não de e tenha que decidir em cada ocasião
+		if(retorno==null)
+			System.out.println("retorno null ------------------------------------->>");
 		
 		// Só retorne int, boolean e classes
 		assembler.add(new LlvmRet(retorno));
 		assembler.add(new LlvmCloseDefinition()); // TODO criar função que ve se a expressão é bool, int ou registrador?
 		
 		System.out.println("----------------------------- method end ----------------------------");
-		return null;
-	}
-	
-	public LlvmValue visit(Formal n){
-		System.out.println("Formal"); // ok
-		return new LlvmNamedValue(
-				n.name.accept(this).toString(),(LlvmType)n.type.accept(this));
-	}
-	
-	public LlvmValue visit(IntArrayType n){
-		System.out.println("IntArrayType");
-		return new LlvmArray(0, LlvmPrimitiveType.I32); // TODO tratar o tamanho
-	}
-	
-	public LlvmValue visit(BooleanType n){
-		System.out.println("BooleanType"); // ok
-		return LlvmPrimitiveType.I1;
-	}
-	
-	public LlvmValue visit(IntegerType n){
-		System.out.println("IntegerType"); // ok
-		return LlvmPrimitiveType.I32;
-	}
-	
-	public LlvmType visit(IdentifierType n){
-		System.out.println("IdentifierType"); // ok
-		return new LlvmPointer(new LlvmStructure(new ArrayList<LlvmType>(),n.name)); // TODO pegar a structure do pool?
-	}
-	
-	public LlvmValue visit(Block n){
-		System.out.println("Block"); // ok
-		util.List<Statement> b=n.body;
-		while(b!=null){
-			b.head.accept(this);
-			b=b.tail;
-		}
-		return null;
-	}
-	
-	public LlvmValue visit(If n){
-		System.out.println("If"); // ok
-		LlvmLabelValue brTrue=LlvmLabelValue.create();
-		LlvmLabelValue brFalse=LlvmLabelValue.create();
-		LlvmLabelValue exit=LlvmLabelValue.create();
-		LlvmValue cond=n.condition.accept(this);
-		assembler.add(new LlvmBranch(cond, brTrue, brFalse));
-		assembler.add(new LlvmLabel(brTrue));
-		n.thenClause.accept(this);
-		assembler.add(new LlvmBranch(null, null, exit));
-		assembler.add(new LlvmLabel(brFalse));
-		if(n.elseClause!=null)
-			n.elseClause.accept(this);
-		assembler.add(new LlvmLabel(exit));
-		return null;
-	}
-	
-	public LlvmValue visit(While n){
-		System.out.println("While"); // ok
-		LlvmLabelValue brTrue=LlvmLabelValue.create();
-		LlvmLabelValue brFalse=LlvmLabelValue.create();
-		LlvmLabelValue topo=LlvmLabelValue.create();
-		assembler.add(new LlvmLabel(topo));
-		LlvmValue cond=n.condition.accept(this);
-		assembler.add(new LlvmBranch(cond, brTrue, brFalse));
-		assembler.add(new LlvmLabel(brTrue));
-		n.body.accept(this);
-		assembler.add(new LlvmBranch(null, null, topo));
-		assembler.add(new LlvmLabel(brFalse));
-		return null;
-	}
-	
-	public LlvmValue visit(Assign n){
-		System.out.println("Assign");
-		
-		LlvmValue exp=n.exp.accept(this);
-		LlvmValue name=n.var.accept(this);
-		if(exp.type instanceof LlvmPointer && ((LlvmPointer)(exp.type)).content instanceof LlvmArray){
-			
-			//System.out.println("tamanho alocado: "+((LlvmArray)((LlvmPointer)(exp.type)).content).length);
-			
-			LlvmRegister var=getVar(name.toString(), this.currentClass);
-			
-			//System.out.println("tamanho pego: "+((LlvmArray)((LlvmPointer)(var.type)).content).length);
-			
-			((LlvmArray)((LlvmPointer)(var.type)).content).length=((LlvmArray)((LlvmPointer)(exp.type)).content).length;
-			
-			System.out.println("tamanho gravado: "+((LlvmArray)((LlvmPointer)(var.type)).content).length);
-			
-			ClassInfo classe=this.env.classes.get(Symbol.symbol(currentClass));
-			int offset=classe.getAttributeOffset(Symbol.symbol("erro"))-1;
-			LlvmType type=classes.get(currentClass).typeList.get(offset);
-			System.out.println("tipo que peguei depois de tentar mudar: "+type);
-			
-			System.out.println(exp.type);
-		}
-		else{
-			LlvmRegister var=getVar(name.toString(), this.currentClass);
-			assembler.add(new LlvmStore(exp, var));
-		}
-		return null;
-	}
-	
-	public LlvmValue visit(ArrayAssign n){
-		System.out.println("ArrayAssign");
-		
-		LlvmValue i=n.index.accept(this);
-		LlvmValue vetorName=n.var.accept(this);
-		LlvmValue valor=n.value.accept(this);
-		LlvmRegister vetor=getVar(vetorName.toString(), currentClass);
-		LlvmRegister lhs=new LlvmRegister(vetor.type);
-		List<LlvmValue> offsets=new ArrayList<LlvmValue>();
-		offsets.add(new LlvmRegister(i+"", ((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content )); // TODO ver la no getVar se muda o tipo que pega
-		// offsets.add(new LlvmRegister(0+"", ((LlvmArray)(vetor.type)).content));
-		assembler.add(new LlvmGetElementPointer(lhs, vetor, offsets));
-		assembler.add(new LlvmStore(valor, lhs));
-		
-		return null;
-	}
-	
-	public LlvmValue visit(And n){
-		System.out.println("And"); // ok
-		LlvmValue op1=n.lhs.accept(this);
-		LlvmValue op2=n.lhs.accept(this);
-		LlvmType tipo=(LlvmType)n.type.accept(this);
-		LlvmRegister lhs=new LlvmRegister(tipo);
-		assembler.add(new LlvmAnd(lhs, tipo, op1, op2));
-		return lhs;
-	}
-	
-	public LlvmValue visit(LessThan n){
-		System.out.println("LessThan"); // ok
-		LlvmValue op1 = n.lhs.accept(this);
-		LlvmValue op2 = n.rhs.accept(this);
-		LlvmType tipo=(LlvmType)n.type.accept(this);
-		LlvmRegister tmp=new LlvmRegister(tipo);
-		assembler.add(new LlvmIcmp(tmp, LlvmIcmp.ULT, tipo, op1, op2));
-		return tmp;
-	}
-	
-	public LlvmValue visit(Equal n){
-		System.out.println("Equal"); // ok
-		LlvmValue op1 = n.lhs.accept(this);
-		LlvmValue op2 = n.rhs.accept(this);
-		LlvmType tipo=(LlvmType)n.type.accept(this);
-		LlvmRegister tmp=new LlvmRegister(tipo);
-		assembler.add(new LlvmIcmp(tmp, LlvmIcmp.EQ, tipo, op1, op2));
-		return tmp;
-	}
-	
-	public LlvmValue visit(Minus n){
-		System.out.println("Minus"); // ok
-		LlvmValue v1 = n.lhs.accept(this);
-		LlvmValue v2 = n.rhs.accept(this);
-		LlvmType tipo = (LlvmType)n.type.accept(this);
-		LlvmRegister lhs = new LlvmRegister(tipo);
-		assembler.add(new LlvmMinus(lhs,tipo,v1,v2));
-		return lhs;
-	}
-	
-	public LlvmValue visit(Times n){
-		System.out.println("Times"); // ok
-		LlvmValue v1 = n.lhs.accept(this);
-		LlvmValue v2 = n.rhs.accept(this);
-		LlvmType tipo=(LlvmType)n.type.accept(this);
-		LlvmRegister lhs = new LlvmRegister(tipo);
-		assembler.add(new LlvmTimes(lhs,tipo,v1,v2));
-		return lhs;
-	}
-	
-	public LlvmValue visit(ArrayLookup n){
-		System.out.println("ArrayLookup");
-		
-		LlvmValue i=n.index.accept(this);
-		LlvmValue vetorName=n.array.accept(this);
-		LlvmRegister vetor=getVar(vetorName.toString(), currentClass);
-		LlvmRegister pt=new LlvmRegister(vetor.type);
-		List<LlvmValue> offsets=new ArrayList<LlvmValue>();
-		offsets.add(new LlvmRegister(i+"", ((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content ));
-		// offsets.add(new LlvmRegister(0+"", ((LlvmArray)(vetor.type)).content));
-		assembler.add(new LlvmGetElementPointer(pt, vetor, offsets));
-		LlvmRegister lhs=new LlvmRegister(((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content);
-		assembler.add(new LlvmLoad(lhs, pt));
-		return lhs;
-	}
-	
-	public LlvmValue visit(ArrayLength n){
-		System.out.println("ArrayLength"); // ok
-		
-		return n.array.accept(this);
+		System.out.println(retorno);
+		return retorno;
 	}
 	
 	public LlvmValue visit(Call n){
@@ -580,26 +386,80 @@ public class Codegen extends VisitorAdapter{
 		return null;
 	}
 	
-	public LlvmValue visit(True n){
-		System.out.println("True"); // ok
-		System.out.println("Tipo do True: "+n.type.accept(this));
-		return new LlvmBool(LlvmBool.TRUE);
-	}
-	
-	public LlvmValue visit(False n){
-		System.out.println("False"); // ok
-		System.out.println("Tipo do False: "+n.type.accept(this));
-		return new LlvmBool(LlvmBool.FALSE);
-	}
-	
 	public LlvmValue visit(IdentifierExp n){ // TODO retorno só? acho que tem que tratar fora vars
 		System.out.println("IdentifierExp"); // ok
 		return new LlvmRegister(n.name.accept(this).toString(),(LlvmType)n.type.accept(this));
 	}
 	
-	public LlvmValue visit(This n){
-		System.out.println("This");
-		return this.thisReg;
+	public LlvmValue visit(Identifier n){
+		System.out.println("Identifier "+n.s); // ok
+		return new LlvmLabelValue("%_"+n.s);
+	}
+	
+	public LlvmValue visit(Assign n){
+		System.out.println("Assign");
+		
+		LlvmValue exp=n.exp.accept(this);
+		LlvmValue name=n.var.accept(this);
+		if(exp.type instanceof LlvmPointer && ((LlvmPointer)(exp.type)).content instanceof LlvmArray){
+			
+			//System.out.println("tamanho alocado: "+((LlvmArray)((LlvmPointer)(exp.type)).content).length);
+			
+			LlvmRegister var=getVar(name.toString(), this.currentClass);
+			
+			//System.out.println("tamanho pego: "+((LlvmArray)((LlvmPointer)(var.type)).content).length);
+			
+			classArrayType.length=((LlvmArray)((LlvmPointer)(exp.type)).content).length;
+			
+			((LlvmArray)((LlvmPointer)(var.type)).content).length=((LlvmArray)((LlvmPointer)(exp.type)).content).length;
+			
+			System.out.println("tamanho gravado: "+((LlvmArray)((LlvmPointer)(var.type)).content).length);
+			
+			ClassInfo classe=this.env.classes.get(Symbol.symbol(currentClass));
+			int offset=classe.getAttributeOffset(Symbol.symbol("erro"))-1;
+			LlvmType type=classes.get(currentClass).typeList.get(offset);
+			System.out.println("tipo que peguei depois de tentar mudar: "+type);
+			
+			System.out.println(exp.type);
+		}
+		else{
+			LlvmRegister var=getVar(name.toString(), this.currentClass);
+			assembler.add(new LlvmStore(exp, var));
+		}
+		return null;
+	}
+	
+	public LlvmValue visit(ArrayAssign n){
+		System.out.println("ArrayAssign");
+		
+		LlvmValue i=n.index.accept(this);
+		LlvmValue vetorName=n.var.accept(this);
+		LlvmValue valor=n.value.accept(this);
+		LlvmRegister vetor=getVar(vetorName.toString(), currentClass);
+		LlvmRegister lhs=new LlvmRegister(vetor.type);
+		List<LlvmValue> offsets=new ArrayList<LlvmValue>();
+		offsets.add(new LlvmRegister(i+"", ((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content )); // TODO ver la no getVar se muda o tipo que pega
+		// offsets.add(new LlvmRegister(0+"", ((LlvmArray)(vetor.type)).content));
+		assembler.add(new LlvmGetElementPointer(lhs, vetor, offsets));
+		assembler.add(new LlvmStore(valor, lhs));
+		
+		return null;
+	}
+	
+	public LlvmValue visit(ArrayLookup n){
+		System.out.println("ArrayLookup");
+		
+		LlvmValue i=n.index.accept(this);
+		LlvmValue vetorName=n.array.accept(this);
+		LlvmRegister vetor=getVar(vetorName.toString(), currentClass);
+		LlvmRegister pt=new LlvmRegister(vetor.type);
+		List<LlvmValue> offsets=new ArrayList<LlvmValue>();
+		offsets.add(new LlvmRegister(i+"", ((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content ));
+		// offsets.add(new LlvmRegister(0+"", ((LlvmArray)(vetor.type)).content));
+		assembler.add(new LlvmGetElementPointer(pt, vetor, offsets));
+		LlvmRegister lhs=new LlvmRegister(((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content);
+		assembler.add(new LlvmLoad(lhs, pt));
+		return lhs;
 	}
 	
 	public LlvmValue visit(NewArray n){
@@ -624,6 +484,59 @@ public class Codegen extends VisitorAdapter{
 		return lhs;
 	}
 	
+	public LlvmValue visit(ArrayLength n){
+		System.out.println("ArrayLength"); // ok
+		
+		return n.array.accept(this);
+	}
+	
+	public LlvmValue visit(This n){
+		System.out.println("This");
+		return this.thisReg;
+	}
+	// ------------------------------------------------------------------------------------------ XXX Fluxos
+	public LlvmValue visit(Block n){
+		System.out.println("Block"); // ok
+		util.List<Statement> b=n.body;
+		while(b!=null){
+			b.head.accept(this);
+			b=b.tail;
+		}
+		return null;
+	}
+	
+	public LlvmValue visit(If n){
+		System.out.println("If"); // ok
+		LlvmLabelValue brTrue=LlvmLabelValue.create();
+		LlvmLabelValue brFalse=LlvmLabelValue.create();
+		LlvmLabelValue exit=LlvmLabelValue.create();
+		LlvmValue cond=n.condition.accept(this);
+		assembler.add(new LlvmBranch(cond, brTrue, brFalse));
+		assembler.add(new LlvmLabel(brTrue));
+		n.thenClause.accept(this);
+		assembler.add(new LlvmBranch(null, null, exit));
+		assembler.add(new LlvmLabel(brFalse));
+		if(n.elseClause!=null)
+			n.elseClause.accept(this);
+		assembler.add(new LlvmLabel(exit));
+		return null;
+	}
+	
+	public LlvmValue visit(While n){
+		System.out.println("While"); // ok
+		LlvmLabelValue brTrue=LlvmLabelValue.create();
+		LlvmLabelValue brFalse=LlvmLabelValue.create();
+		LlvmLabelValue topo=LlvmLabelValue.create();
+		assembler.add(new LlvmLabel(topo));
+		LlvmValue cond=n.condition.accept(this);
+		assembler.add(new LlvmBranch(cond, brTrue, brFalse));
+		assembler.add(new LlvmLabel(brTrue));
+		n.body.accept(this);
+		assembler.add(new LlvmBranch(null, null, topo));
+		assembler.add(new LlvmLabel(brFalse));
+		return null;
+	}
+	// ------------------------------------------------------------------------------------------ XXX Opera�oes
 	public LlvmValue visit(Not n){
 		System.out.println("Not"); // ok
 		LlvmValue exp=n.exp.accept(this);
@@ -634,8 +547,102 @@ public class Codegen extends VisitorAdapter{
 		return lhs;
 	}
 	
-	public LlvmValue visit(Identifier n){
-		System.out.println("Identifier "+n.s); // ok
-		return new LlvmLabelValue("%_"+n.s);
+	public LlvmValue visit(And n){
+		System.out.println("And"); // ok
+		LlvmValue op1=n.lhs.accept(this);
+		LlvmValue op2=n.lhs.accept(this);
+		LlvmType tipo=(LlvmType)n.type.accept(this);
+		LlvmRegister lhs=new LlvmRegister(tipo);
+		assembler.add(new LlvmAnd(lhs, tipo, op1, op2));
+		return lhs;
+	}
+	
+	public LlvmValue visit(LessThan n){
+		System.out.println("LessThan"); // ok
+		LlvmValue op1 = n.lhs.accept(this);
+		LlvmValue op2 = n.rhs.accept(this);
+		LlvmType tipo=(LlvmType)n.type.accept(this);
+		LlvmRegister tmp=new LlvmRegister(tipo);
+		assembler.add(new LlvmIcmp(tmp, LlvmIcmp.ULT, tipo, op1, op2));
+		return tmp;
+	}
+	
+	public LlvmValue visit(Equal n){
+		System.out.println("Equal"); // ok
+		LlvmValue op1 = n.lhs.accept(this);
+		LlvmValue op2 = n.rhs.accept(this);
+		LlvmType tipo=(LlvmType)n.type.accept(this);
+		LlvmRegister tmp=new LlvmRegister(tipo);
+		assembler.add(new LlvmIcmp(tmp, LlvmIcmp.EQ, tipo, op1, op2));
+		return tmp;
+	}
+	
+	public LlvmValue visit(Plus n){
+		System.out.println("Plus"); // ok
+		
+		LlvmValue v1 = n.lhs.accept(this);
+		LlvmValue v2 = n.rhs.accept(this);
+		LlvmRegister lhs = new LlvmRegister(LlvmPrimitiveType.I32);
+		assembler.add(new LlvmPlus(lhs,LlvmPrimitiveType.I32,v1,v2));
+		return lhs;
+	}
+	
+	public LlvmValue visit(Minus n){
+		System.out.println("Minus"); // ok
+		LlvmValue v1 = n.lhs.accept(this);
+		LlvmValue v2 = n.rhs.accept(this);
+		LlvmType tipo = (LlvmType)n.type.accept(this);
+		LlvmRegister lhs = new LlvmRegister(tipo);
+		assembler.add(new LlvmMinus(lhs,tipo,v1,v2));
+		return lhs;
+	}
+	
+	public LlvmValue visit(Times n){
+		System.out.println("Times"); // ok
+		LlvmValue v1 = n.lhs.accept(this);
+		LlvmValue v2 = n.rhs.accept(this);
+		LlvmType tipo=(LlvmType)n.type.accept(this);
+		LlvmRegister lhs = new LlvmRegister(tipo);
+		assembler.add(new LlvmTimes(lhs,tipo,v1,v2));
+		return lhs;
+	}
+	// ------------------------------------------------------------------------------------------ XXX Constantes
+	public LlvmValue visit(True n){
+		System.out.println("True"); // ok
+		System.out.println("Tipo do True: "+n.type.accept(this));
+		return new LlvmBool(LlvmBool.TRUE);
+	}
+	
+	public LlvmValue visit(False n){
+		System.out.println("False"); // ok
+		System.out.println("Tipo do False: "+n.type.accept(this));
+		return new LlvmBool(LlvmBool.FALSE);
+	}
+	
+	public LlvmValue visit(IntegerLiteral n){
+		System.out.println("IntegerLiteral");
+		return new LlvmIntegerLiteral(n.value);
+	};
+	// ------------------------------------------------------------------------------------------ XXX Tipos
+	public LlvmValue visit(IntArrayType n){
+		System.out.println("IntArrayType");
+		LlvmArray array=new LlvmArray(0, LlvmPrimitiveType.I32); // TODO nenhuma gambiarra resolveu
+		this.classArrayType=array;
+		return array;
+	}
+	
+	public LlvmValue visit(BooleanType n){
+		System.out.println("BooleanType"); // ok
+		return LlvmPrimitiveType.I1;
+	}
+	
+	public LlvmValue visit(IntegerType n){
+		System.out.println("IntegerType"); // ok
+		return LlvmPrimitiveType.I32;
+	}
+	
+	public LlvmType visit(IdentifierType n){
+		System.out.println("IdentifierType"); // ok
+		return new LlvmPointer(new LlvmStructure(new ArrayList<LlvmType>(),n.name)); // TODO pegar a structure do pool?
 	}
 }
