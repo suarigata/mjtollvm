@@ -80,8 +80,10 @@ public class Codegen extends VisitorAdapter{
 		this.assembler.add(new LlvmExternalDeclaration("@malloc", new LlvmPointer(LlvmPrimitiveType.I8),mallocpts)); 
 		
 		String r = new String();
-		for(LlvmInstruction instr : this.assembler)
+		for(LlvmInstruction instr : this.assembler){
+			System.out.println(instr); // TODO coments esse debug lindo
 			r += instr+"\n";
+		}
 		
 		System.out.println(r); // TODO Exibição do programr gerado. Tirar quando pronto.
 		
@@ -540,6 +542,7 @@ public class Codegen extends VisitorAdapter{
 		name="@__"+name+"_"+obj.type.toString().substring(7);
 		
 		System.out.println("method: "+name);
+		System.out.println("objleitor: ---------------------"+obj);
 		
 		ArrayList<LlvmValue> params=new ArrayList<LlvmValue>();
 		util.List<Exp> actuals=n.actuals;
@@ -561,9 +564,16 @@ public class Codegen extends VisitorAdapter{
 		List<LlvmType> pts = new LinkedList<LlvmType>();
 		pts.add(new LlvmPointer(LlvmPrimitiveType.I8));
 		
+		System.out.println(new LlvmCall(new LlvmRegister(type),
+				type,
+				new LlvmPointer(LlvmPrimitiveType.I8), // pts
+				name,
+				params
+				));
+		
 		assembler.add(new LlvmCall(new LlvmRegister(type),
 				type,
-				pts,				 
+				new LlvmPointer(LlvmPrimitiveType.I8), // pts
 				name,
 				params
 				));
@@ -589,7 +599,7 @@ public class Codegen extends VisitorAdapter{
 	
 	public LlvmValue visit(This n){
 		System.out.println("This");
-		return null;
+		return this.thisReg;
 	}
 	
 	public LlvmValue visit(NewArray n){
