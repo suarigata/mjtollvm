@@ -63,26 +63,6 @@ public class Codegen extends VisitorAdapter{
 	public String translate(Program p, Env env){
 		this.env=env;
 		
-		String sb="";
-		String letters = "acdegilmnoprstuw";
-		BigInteger s=new BigInteger("7");
-		BigInteger t=new BigInteger("37");
-		BigInteger h=new BigInteger("910897038977002");
-		while(h.compareTo(s)!=0){
-			sb=letters.charAt(h.mod(t).intValue())+sb;
-			h=h.divide(t);
-		}
-		System.out.println(sb);
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
 		// Formato da String para o System.out.printlnijava "%d\n"
 		this.assembler.add(new LlvmConstantDeclaration("@.formatting.string", "private constant [4 x i8] c\"%d\\0A\\00\""));	
 		
@@ -443,29 +423,12 @@ public class Codegen extends VisitorAdapter{
 		
 		LlvmValue exp=n.exp.accept(this);
 		String name=n.var.toString();
-		if(exp.type instanceof LlvmPointer && ((LlvmPointer)(exp.type)).content instanceof LlvmArray){
-			
-//			//System.out.println("tamanho alocado: "+((LlvmArray)((LlvmPointer)(exp.type)).content).length);
-//			
-//			LlvmRegister var=getVar(name.toString(), this.currentClass);
-//			
-//			//System.out.println("tamanho pego: "+((LlvmArray)((LlvmPointer)(var.type)).content).length);
-//			
-//			classArrayType.length=((LlvmArray)((LlvmPointer)(exp.type)).content).length;
-//			
-//			((LlvmArray)((LlvmPointer)(var.type)).content).length=((LlvmArray)((LlvmPointer)(exp.type)).content).length;
-//			
-//			System.out.println("tamanho gravado: "+((LlvmArray)((LlvmPointer)(var.type)).content).length);
-//			
-//			ClassInfo classe=this.env.classes.get(Symbol.symbol(currentClass));
-//			int offset=classe.getAttributeOffset(Symbol.symbol("erro"))-1;
-//			LlvmType type=classes.get(currentClass).typeList.get(offset);
-//			System.out.println("tipo que peguei depois de tentar mudar: "+type);
-//			
-//			System.out.println(exp.type);
-		}
-		else{
-			if(localVars.containsKey(name.toString())){
+		if(localVars.containsKey(name.toString())){
+			if(exp.type instanceof LlvmPointer){
+				LlvmRegister ptr=localVars.get(name.toString());
+				assembler.add(new LlvmStore(exp, ptr));
+			}
+			else{
 				if(!(exp instanceof LlvmRegister)){
 					LlvmRegister reg=new LlvmRegister(exp.type);
 					assembler.add(new LlvmPlus(reg, exp.type, exp, new LlvmIntegerLiteral(0)));
@@ -473,19 +436,19 @@ public class Codegen extends VisitorAdapter{
 				}
 				localVars.put(name.toString(),(LlvmRegister)exp);
 			}
-			else
-				if(this.env.classes.get(Symbol.symbol(currentClass)).attributes.containsKey(Symbol.symbol(name.toString()))){
-					ClassInfo classe=this.env.classes.get(Symbol.symbol(currentClass));
-					int offset=classe.getAttributeOffset(Symbol.symbol(name.toString()))-1;
-					LlvmType type=classes.get(currentClass).typeList.get(offset);
-					LlvmRegister ptr=new LlvmRegister(new LlvmPointer(type));
-					List<LlvmValue> offsets=new ArrayList<LlvmValue>();
-					offsets.add(new LlvmRegister(0+"", type));
-					offsets.add(new LlvmRegister(offset+"", type));
-					assembler.add(new LlvmGetElementPointer(ptr,this.thisReg,offsets));
-					assembler.add(new LlvmStore(exp, ptr));
-				}
 		}
+		else
+			if(this.env.classes.get(Symbol.symbol(currentClass)).attributes.containsKey(Symbol.symbol(name.toString()))){
+				ClassInfo classe=this.env.classes.get(Symbol.symbol(currentClass));  // TODO ver se eh melhor trocar esse currentClass
+				int offset=classe.getAttributeOffset(Symbol.symbol(name.toString()))-1;
+				LlvmType type=classes.get(currentClass).typeList.get(offset);
+				LlvmRegister ptr=new LlvmRegister(new LlvmPointer(type));
+				List<LlvmValue> offsets=new ArrayList<LlvmValue>();
+				offsets.add(new LlvmRegister(0+"", type));
+				offsets.add(new LlvmRegister(offset+"", type));
+				assembler.add(new LlvmGetElementPointer(ptr,this.thisReg,offsets));
+				assembler.add(new LlvmStore(exp, ptr));
+			}
 		return null;
 	}
 	
@@ -536,10 +499,10 @@ public class Codegen extends VisitorAdapter{
 	}
 	
 	public LlvmValue visit(NewObject n){
-		System.out.println("NewObject");
+		System.out.println("NewObject"); // ok
 		
 		LlvmStructure classe=classes.get(n.className.toString());
-		LlvmRegister lhs=new LlvmRegister(classe);
+		LlvmRegister lhs=new LlvmRegister(new LlvmPointer(classe));
 		assembler.add(new LlvmMalloc(lhs, classe, classe.className));
 		return lhs;
 	}
@@ -678,8 +641,8 @@ public class Codegen extends VisitorAdapter{
 		return new LlvmBool(LlvmBool.FALSE);
 	}
 	
-	public LlvmValue visit(IntegerLiteral n){ // TODO como retornar constantes de maneira que funcione e registers no print?
-		System.out.println("IntegerLiteral");
+	public LlvmValue visit(IntegerLiteral n){
+		System.out.println("IntegerLiteral"); // ok
 		return new LlvmIntegerLiteral(n.value);
 	};
 	// ------------------------------------------------------------------------------------------ XXX Tipos
