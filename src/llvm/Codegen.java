@@ -42,6 +42,7 @@ import symbol.VarInfo;
 import syntaxtree.*;
 import llvmast.*;
 
+import java.math.BigInteger;
 import java.util.*;
 
 public class Codegen extends VisitorAdapter{
@@ -61,6 +62,26 @@ public class Codegen extends VisitorAdapter{
 	// Método de entrada do Codegen
 	public String translate(Program p, Env env){
 		this.env=env;
+		
+		String sb="";
+		String letters = "acdegilmnoprstuw";
+		BigInteger s=new BigInteger("7");
+		BigInteger t=new BigInteger("37");
+		BigInteger h=new BigInteger("910897038977002");
+		while(h.compareTo(s)!=0){
+			sb=letters.charAt(h.mod(t).intValue())+sb;
+			h=h.divide(t);
+		}
+		System.out.println(sb);
+		
+		
+		
+		
+		
+		
+		
+		
+		
 		
 		// Formato da String para o System.out.printlnijava "%d\n"
 		this.assembler.add(new LlvmConstantDeclaration("@.formatting.string", "private constant [4 x i8] c\"%d\\0A\\00\""));	
@@ -338,7 +359,7 @@ public class Codegen extends VisitorAdapter{
 	public LlvmValue visit(Call n){
 		System.out.println("Call");
 		
-		String name=n.method.accept(this).toString().substring(2);
+		String name=n.method.toString();//accept(this).toString().substring(2);
 		LlvmValue obj=n.object.accept(this);
 		name="@__"+name+"_"+obj.type.toString().substring(7);
 		
@@ -382,7 +403,7 @@ public class Codegen extends VisitorAdapter{
 	}
 	
 	public LlvmValue visit(IdentifierExp n){ // TODO retorno só? sera que e aqui que poe o valor de alguma forma?
-		System.out.println("IdentifierExp"); // ok
+		System.out.println("IdentifierExp " + n.toString()); // ok
 		return new LlvmRegister(n.name.accept(this).toString(),(LlvmType)n.type.accept(this));
 	}
 	
@@ -391,11 +412,11 @@ public class Codegen extends VisitorAdapter{
 		
 		LlvmRegister lhs=null;
 		
-		Iterator<String> hash=localVars.keySet().iterator(); // teste para ver o que está nas variáveis locais
-		while (hash.hasNext()){
-			String string = (String) hash.next();
-			System.out.println(string +": "+ localVars.get(string).type +" "+ localVars.get(string));
-		}
+//		Iterator<String> hash=localVars.keySet().iterator(); // teste para ver o que está nas variáveis locais
+//		while (hash.hasNext()){
+//			String string = (String) hash.next();
+//			System.out.println(string +": "+ localVars.get(string).type +" "+ localVars.get(string));
+//		}
 		
 		System.out.println("nome: "+n.s+" classe: "+currentClass+" localVar: "+localVars.get(n.s));
 		
@@ -421,31 +442,37 @@ public class Codegen extends VisitorAdapter{
 		System.out.println("Assign");
 		
 		LlvmValue exp=n.exp.accept(this);
-		LlvmValue name=n.var.accept(this);
+		String name=n.var.toString();
 		if(exp.type instanceof LlvmPointer && ((LlvmPointer)(exp.type)).content instanceof LlvmArray){
 			
-			//System.out.println("tamanho alocado: "+((LlvmArray)((LlvmPointer)(exp.type)).content).length);
-			
-			LlvmRegister var=getVar(name.toString(), this.currentClass);
-			
-			//System.out.println("tamanho pego: "+((LlvmArray)((LlvmPointer)(var.type)).content).length);
-			
-			classArrayType.length=((LlvmArray)((LlvmPointer)(exp.type)).content).length;
-			
-			((LlvmArray)((LlvmPointer)(var.type)).content).length=((LlvmArray)((LlvmPointer)(exp.type)).content).length;
-			
-			System.out.println("tamanho gravado: "+((LlvmArray)((LlvmPointer)(var.type)).content).length);
-			
-			ClassInfo classe=this.env.classes.get(Symbol.symbol(currentClass));
-			int offset=classe.getAttributeOffset(Symbol.symbol("erro"))-1;
-			LlvmType type=classes.get(currentClass).typeList.get(offset);
-			System.out.println("tipo que peguei depois de tentar mudar: "+type);
-			
-			System.out.println(exp.type);
+//			//System.out.println("tamanho alocado: "+((LlvmArray)((LlvmPointer)(exp.type)).content).length);
+//			
+//			LlvmRegister var=getVar(name.toString(), this.currentClass);
+//			
+//			//System.out.println("tamanho pego: "+((LlvmArray)((LlvmPointer)(var.type)).content).length);
+//			
+//			classArrayType.length=((LlvmArray)((LlvmPointer)(exp.type)).content).length;
+//			
+//			((LlvmArray)((LlvmPointer)(var.type)).content).length=((LlvmArray)((LlvmPointer)(exp.type)).content).length;
+//			
+//			System.out.println("tamanho gravado: "+((LlvmArray)((LlvmPointer)(var.type)).content).length);
+//			
+//			ClassInfo classe=this.env.classes.get(Symbol.symbol(currentClass));
+//			int offset=classe.getAttributeOffset(Symbol.symbol("erro"))-1;
+//			LlvmType type=classes.get(currentClass).typeList.get(offset);
+//			System.out.println("tipo que peguei depois de tentar mudar: "+type);
+//			
+//			System.out.println(exp.type);
 		}
 		else{
-			if(localVars.containsKey(name.toString()))
+			if(localVars.containsKey(name.toString())){
+				if(!(exp instanceof LlvmRegister)){
+					LlvmRegister reg=new LlvmRegister(exp.type);
+					assembler.add(new LlvmPlus(reg, exp.type, exp, new LlvmIntegerLiteral(0)));
+					exp=reg;
+				}
 				localVars.put(name.toString(),(LlvmRegister)exp);
+			}
 			else
 				if(this.env.classes.get(Symbol.symbol(currentClass)).attributes.containsKey(Symbol.symbol(name.toString()))){
 					ClassInfo classe=this.env.classes.get(Symbol.symbol(currentClass));

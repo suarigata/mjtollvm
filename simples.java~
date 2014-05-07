@@ -9,16 +9,14 @@ class b{
 	int[] erro;
 
 	public int soma(int a,int b){
+		a=a+b;
+		oi=1;
 		return a+b;
 	}
 	
 	public int geral(){
-		boolean al;
-		int[] b;
-		boolean beu;
-		b=new int[2];
-		b=new int[3];
-		erro=new int[3];
+		b obj;
+		obj=new b();
 		return 0;
 	}
 }
