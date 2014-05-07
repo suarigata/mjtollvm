@@ -12,31 +12,14 @@ entry:
 }
 define i32 @__soma_b(%class.b * %this, i32 %_a, i32 %_b) {
 entry:
-  %tmp4 = alloca i32
-  store i32 %_a, i32 * %tmp4
-  %tmp5 = alloca i32
-  store i32 %_b, i32 * %tmp5
-  %tmp6 = add i32 %_a, %_b
-  ret i32 %tmp6
+  %tmp4 = add i32 %_a, %_b
+  ret i32 %tmp4
 }
 define i32 @__geral_b(%class.b * %this) {
 entry:
-  %tmp7 = alloca i1
-  %tmp8 = alloca [3 x i32]
-  %tmp9 = alloca i1
-  %tmp11 = mul i32 1, 2
-  %tmp12 = call i8* @malloc ( i32 %tmp11)
-  %tmp10 = bitcast i8* %tmp12 to [2 x i32]*
-  %tmp14 = mul i32 1, 3
-  %tmp15 = call i8* @malloc ( i32 %tmp14)
-  %tmp13 = bitcast i8* %tmp15 to [3 x i32]*
-  %tmp17 = mul i32 1, 3
-  %tmp18 = call i8* @malloc ( i32 %tmp17)
-  %tmp16 = bitcast i8* %tmp18 to [3 x i32]*
-  %tmp19 = getelementptr %class.b * %this, [4 x i32] 0, [4 x i32] 1
-  %tmp20 = getelementptr %class.b * %this, [4 x i32] 0, [4 x i32] 1
-  %tmp21 = getelementptr [4 x i32] * %tmp20, i32 2
-  store i32 9, [4 x i32] * %tmp21
+  %tmp6 = mul i32 4, 1
+  %tmp7 = call i8* @malloc ( i32 %tmp6)
+  %tmp5 = bitcast i8* %tmp7 to %class.b*
   ret i32 0
 }
 declare i32 @printf (i8 *, ...)

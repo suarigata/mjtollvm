@@ -13,13 +13,8 @@ class b{
 	}
 	
 	public int geral(){
-		boolean al;
-		int[] b;
-		boolean beu;
-		b=new int[2];
-		b=new int[3];
-		erro=new int[3];
-		erro[2]=9;
+		b obj;
+		obj=new b();
 		return 0;
 	}
 }

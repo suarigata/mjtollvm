@@ -144,7 +144,7 @@ public class Codegen extends VisitorAdapter{
 				LlvmType type=classes.get(className).typeList.get(offset);
 				lhs=new LlvmRegister(new LlvmPointer(type));
 				// offset=this.classes.get(classe).getOffset(offset); TODO acho que não precisa acessar por bytes o offset
-				((LlvmArray)type).length=4;
+				//((LlvmArray)type).length=4;
 				List<LlvmValue> offsets=new ArrayList<LlvmValue>();
 				offsets.add(new LlvmRegister(0+"", type));
 				offsets.add(new LlvmRegister(offset+"", type));
@@ -253,21 +253,19 @@ public class Codegen extends VisitorAdapter{
 	public LlvmValue visit(Formal n){
 		System.out.println("Formal"); // ok
 		return new LlvmNamedValue(
-				n.name.accept(this).toString(),(LlvmType)n.type.accept(this));
+				n.name.toString(),(LlvmType)n.type.accept(this)); // memoria
 	}
 	
 	public LlvmValue visit(VarDecl n){
 		System.out.println("VarDecl"); // ok
-		
-		LlvmType type=(LlvmType)n.type.accept(this);
-		
 		return new LlvmNamedValue(
-				n.name.accept(this).toString(),type);
+				n.name.toString(),(LlvmType)n.type.accept(this)); // memoria
 	}
 	
 	public LlvmValue visit(MethodDecl n){
 		System.out.println("MethodDecl");
 		localVars=new HashMap<>();
+		LlvmNamedValue var;
 		
 		System.out.println("----------------------------- method init ----------------------------");
 		
@@ -277,7 +275,9 @@ public class Codegen extends VisitorAdapter{
 		args.add(thisReg);
 		util.List<Formal> f=n.formals;
 		while(f!=null){
-			args.add(f.head.accept(this));
+			var=(LlvmNamedValue)f.head.accept(this);
+			var.name="%_"+var.name;
+			args.add(var);
 			f=f.tail;
 		}
 		assembler.add(new LlvmDefine("@__"+n.name+"_"+this.currentClass, returnType, args));
@@ -287,13 +287,13 @@ public class Codegen extends VisitorAdapter{
 		
 		f=n.formals; // formals
 		LlvmRegister regVar=null;
-		LlvmNamedValue var=null;
+		var=null;
 		while(f!=null){
 			var=(LlvmNamedValue)f.head.accept(this);
-			regVar=new LlvmRegister(new LlvmPointer(var.type)); // TODO pode ser que receba vetores. Aí tem que ver.
-			assembler.add(new LlvmAlloca(regVar, var.type));
-			assembler.add(new LlvmStore(var, regVar));
-			localVars.put(var.name,regVar);
+			regVar=new LlvmRegister("%_"+var.name,var.type); // memoria TODO pode ser que receba vetores. Aí tem que ver.
+			// assembler.add(new LlvmAlloca(regVar, var.type)); // memoria
+			// assembler.add(new LlvmStore(var, regVar)); // memoria
+			localVars.put(var.name,regVar); // memoria
 			f=f.tail;
 		}
 		
@@ -301,9 +301,9 @@ public class Codegen extends VisitorAdapter{
 		while(l!=null){
 			var=(LlvmNamedValue)l.head.accept(this);
 			//if(!(var.type instanceof LlvmArray)){ // TODO aqui acho que é pra barrar o alloca quando for intArrayType ------------ aqui
-				regVar=new LlvmRegister(new LlvmPointer(var.type));
-				assembler.add(new LlvmAlloca(regVar, var.type));
-				localVars.put(var.name,regVar);
+				regVar=new LlvmRegister("%_"+var.name,var.type); // memoria qualquer nome pois sera jogado fora
+				// assembler.add(new LlvmAlloca(regVar, var.type)); // memoria
+				localVars.put(var.name,regVar); // memoria
 			//}
 			l=l.tail;
 		}
@@ -322,21 +322,16 @@ public class Codegen extends VisitorAdapter{
 			b=b.tail;
 		}
 		
-//		Recuperar dados de variavel local
-//		LlvmRegister R2 = new LlvmRegister(LlvmPrimitiveType.I32);
-//		assembler.add(new LlvmLoad(R2,R1));
-//		assembler.add(new LlvmRet(R2));
 		LlvmValue retorno=n.returnExp.accept(this); // TODO se for var, tem que buscar conteudo parei aqui -------------------------------
-		// ver se não pode pegar o valor já nuns métodos pra dentro, mas pode ser que não de e tenha que decidir em cada ocasião
-		if(retorno==null)
-			System.out.println("retorno null ------------------------------------->>");
 		
 		// Só retorne int, boolean e classes
 		assembler.add(new LlvmRet(retorno));
-		assembler.add(new LlvmCloseDefinition()); // TODO criar função que ve se a expressão é bool, int ou registrador?
+		assembler.add(new LlvmCloseDefinition());
 		
 		System.out.println("----------------------------- method end ----------------------------");
 		System.out.println(retorno);
+		
+		localVars=null;
 		return retorno;
 	}
 	
@@ -386,14 +381,40 @@ public class Codegen extends VisitorAdapter{
 		return null;
 	}
 	
-	public LlvmValue visit(IdentifierExp n){ // TODO retorno só? acho que tem que tratar fora vars
+	public LlvmValue visit(IdentifierExp n){ // TODO retorno só? sera que e aqui que poe o valor de alguma forma?
 		System.out.println("IdentifierExp"); // ok
 		return new LlvmRegister(n.name.accept(this).toString(),(LlvmType)n.type.accept(this));
 	}
 	
-	public LlvmValue visit(Identifier n){
-		System.out.println("Identifier "+n.s); // ok
-		return new LlvmLabelValue("%_"+n.s);
+	public LlvmValue visit(Identifier n){ // memoria TODO tudo memoria
+		System.out.println("Identifier "+n.s);
+		
+		LlvmRegister lhs=null;
+		
+		Iterator<String> hash=localVars.keySet().iterator(); // teste para ver o que está nas variáveis locais
+		while (hash.hasNext()){
+			String string = (String) hash.next();
+			System.out.println(string +": "+ localVars.get(string).type +" "+ localVars.get(string));
+		}
+		
+		System.out.println("nome: "+n.s+" classe: "+currentClass+" localVar: "+localVars.get(n.s));
+		
+		if(localVars.containsKey(n.s))
+			lhs=localVars.get(n.s);
+		else
+			if(this.env.classes.get(Symbol.symbol(currentClass)).attributes.containsKey(Symbol.symbol(n.s))){
+				ClassInfo classe=this.env.classes.get(Symbol.symbol(currentClass));
+				int offset=classe.getAttributeOffset(Symbol.symbol(n.s))-1;
+				LlvmType type=classes.get(currentClass).typeList.get(offset);
+				LlvmRegister ptr=new LlvmRegister(new LlvmPointer(type));
+				lhs=new LlvmRegister(type);
+				List<LlvmValue> offsets=new ArrayList<LlvmValue>();
+				offsets.add(new LlvmRegister(0+"", type));
+				offsets.add(new LlvmRegister(offset+"", type));
+				assembler.add(new LlvmGetElementPointer(ptr,this.thisReg,offsets));
+				assembler.add(new LlvmLoad(lhs,ptr));
+			}
+		return lhs;
 	}
 	
 	public LlvmValue visit(Assign n){
@@ -423,8 +444,20 @@ public class Codegen extends VisitorAdapter{
 			System.out.println(exp.type);
 		}
 		else{
-			LlvmRegister var=getVar(name.toString(), this.currentClass);
-			assembler.add(new LlvmStore(exp, var));
+			if(localVars.containsKey(name.toString()))
+				localVars.put(name.toString(),(LlvmRegister)exp);
+			else
+				if(this.env.classes.get(Symbol.symbol(currentClass)).attributes.containsKey(Symbol.symbol(name.toString()))){
+					ClassInfo classe=this.env.classes.get(Symbol.symbol(currentClass));
+					int offset=classe.getAttributeOffset(Symbol.symbol(name.toString()))-1;
+					LlvmType type=classes.get(currentClass).typeList.get(offset);
+					LlvmRegister ptr=new LlvmRegister(new LlvmPointer(type));
+					List<LlvmValue> offsets=new ArrayList<LlvmValue>();
+					offsets.add(new LlvmRegister(0+"", type));
+					offsets.add(new LlvmRegister(offset+"", type));
+					assembler.add(new LlvmGetElementPointer(ptr,this.thisReg,offsets));
+					assembler.add(new LlvmStore(exp, ptr));
+				}
 		}
 		return null;
 	}
@@ -463,7 +496,7 @@ public class Codegen extends VisitorAdapter{
 	}
 	
 	public LlvmValue visit(NewArray n){
-		System.out.println("NewArray"); // ok
+		System.out.println("NewArray");
 		
 		LlvmValue size=n.size.accept(this);
 		LlvmType type=(LlvmType)n.type.accept(this);
@@ -476,7 +509,7 @@ public class Codegen extends VisitorAdapter{
 	}
 	
 	public LlvmValue visit(NewObject n){
-		System.out.println("NewObject"); // ok
+		System.out.println("NewObject");
 		
 		LlvmStructure classe=classes.get(n.className.toString());
 		LlvmRegister lhs=new LlvmRegister(classe);
@@ -485,13 +518,12 @@ public class Codegen extends VisitorAdapter{
 	}
 	
 	public LlvmValue visit(ArrayLength n){
-		System.out.println("ArrayLength"); // ok
-		
+		System.out.println("ArrayLength"); // TODO isso acho que e atributo do vetor.length
 		return n.array.accept(this);
 	}
 	
 	public LlvmValue visit(This n){
-		System.out.println("This");
+		System.out.println("This"); // ok
 		return this.thisReg;
 	}
 	// ------------------------------------------------------------------------------------------ XXX Fluxos
@@ -536,7 +568,7 @@ public class Codegen extends VisitorAdapter{
 		assembler.add(new LlvmLabel(brFalse));
 		return null;
 	}
-	// ------------------------------------------------------------------------------------------ XXX Opera�oes
+	// ------------------------------------------------------------------------------------------ XXX Operacoes
 	public LlvmValue visit(Not n){
 		System.out.println("Not"); // ok
 		LlvmValue exp=n.exp.accept(this);
@@ -579,11 +611,11 @@ public class Codegen extends VisitorAdapter{
 	
 	public LlvmValue visit(Plus n){
 		System.out.println("Plus"); // ok
-		
 		LlvmValue v1 = n.lhs.accept(this);
 		LlvmValue v2 = n.rhs.accept(this);
-		LlvmRegister lhs = new LlvmRegister(LlvmPrimitiveType.I32);
-		assembler.add(new LlvmPlus(lhs,LlvmPrimitiveType.I32,v1,v2));
+		LlvmType tipo = (LlvmType)n.type.accept(this);
+		LlvmRegister lhs = new LlvmRegister(tipo);
+		assembler.add(new LlvmPlus(lhs,tipo,v1,v2));
 		return lhs;
 	}
 	
@@ -619,16 +651,14 @@ public class Codegen extends VisitorAdapter{
 		return new LlvmBool(LlvmBool.FALSE);
 	}
 	
-	public LlvmValue visit(IntegerLiteral n){
+	public LlvmValue visit(IntegerLiteral n){ // TODO como retornar constantes de maneira que funcione e registers no print?
 		System.out.println("IntegerLiteral");
 		return new LlvmIntegerLiteral(n.value);
 	};
 	// ------------------------------------------------------------------------------------------ XXX Tipos
 	public LlvmValue visit(IntArrayType n){
 		System.out.println("IntArrayType");
-		LlvmArray array=new LlvmArray(0, LlvmPrimitiveType.I32); // TODO nenhuma gambiarra resolveu
-		this.classArrayType=array;
-		return array;
+		return new LlvmArray(0, LlvmPrimitiveType.I32); // TODO nenhuma gambiarra resolveu
 	}
 	
 	public LlvmValue visit(BooleanType n){
@@ -643,6 +673,6 @@ public class Codegen extends VisitorAdapter{
 	
 	public LlvmType visit(IdentifierType n){
 		System.out.println("IdentifierType"); // ok
-		return new LlvmPointer(new LlvmStructure(new ArrayList<LlvmType>(),n.name)); // TODO pegar a structure do pool?
+		return new LlvmPointer(classes.get(n.name));
 	}
 }
