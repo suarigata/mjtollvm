@@ -17,22 +17,23 @@ define i32 @__ComputeFac_Fac(%class.Fac * %this, i32 %num) {
 entry:
   %_num = alloca i32
   store i32 %num, i32 * %_num
-  %_num_aux = alloca i32
+  %_num_aux = alloca i32 *
   %tmp8 = load i32 * * * %_num
-  %tmp9 = icmp slt i1 %tmp8, 1
+  %tmp9 = icmp slt i32 %tmp8, 1
   br i1 %tmp9, label %label0, label %label1
 label0:
-  %tmp10 = add i32 1, 0
+  store i32 1, i32 * * %_num_aux
   br label %label2
 label1:
+  %tmp10 = load i32 * * * %_num
   %tmp11 = load i32 * * * %_num
-  %tmp12 = load i32 * * * %_num
-  %tmp13 = sub i32 %tmp12, 1
-  %tmp14 = call i32 (%class.Fac *, i32)* @__ComputeFac_Fac(%class.Fac * %this, i32 %tmp13)
-  %tmp15 = mul i32 %tmp11, %tmp14
+  %tmp12 = sub i32 %tmp11, 1
+  %tmp13 = call i32 (%class.Fac *, i32)* @__ComputeFac_Fac(%class.Fac * %this, i32 %tmp12)
+  %tmp14 = mul i32 %tmp10, %tmp13
+  store i32 %tmp14, i32 * * %_num_aux
 label2:
-  %tmp16 = load i32 * %tmp15
-  ret i32 %tmp16
+  %tmp15 = load i32 * * %_num_aux
+  ret i32 %tmp15
 }
 declare i32 @printf (i8 *, ...)
 declare i8 * @malloc (i32)

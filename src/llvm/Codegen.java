@@ -235,12 +235,12 @@ public class Codegen extends VisitorAdapter{
 	
 	public LlvmValue visit(Formal n){
 		System.out.println("Formal"); // ok
-		return new LlvmRegister(n.name.accept(this).toString(),(LlvmType)n.type.accept(this)); // memoria
+		return new LlvmRegister(n.name.accept(this).toString(),(LlvmType)n.type.accept(this)); // memoria tirei daqui o pointer do segundo
 	}
 	
 	public LlvmValue visit(VarDecl n){
 		System.out.println("VarDecl"); // ok
-		return new LlvmRegister(n.name.accept(this).toString(),(LlvmType)n.type.accept(this)); // memoria
+		return new LlvmRegister(n.name.accept(this).toString(),new LlvmPointer((LlvmType)n.type.accept(this))); // memoria
 	}
 	
 	public LlvmValue visit(MethodDecl n){
@@ -358,33 +358,35 @@ public class Codegen extends VisitorAdapter{
 		LlvmValue exp=n.exp.accept(this);
 		String name=n.var.toString();
 		
+		LlvmValue var=getVar(name, currentClass);
+		assembler.add(new LlvmStore(exp, var));
 		
-		if(localVars.containsKey(name.toString())){
-			if(exp.type instanceof LlvmPointer){
-				LlvmRegister ptr=localVars.get(name.toString());
-				assembler.add(new LlvmStore(exp, ptr));
-			}
-			else{
-				if(!(exp instanceof LlvmRegister)){
-					LlvmRegister reg=new LlvmRegister(exp.type);
-					assembler.add(new LlvmPlus(reg, exp.type, exp, new LlvmIntegerLiteral(0)));
-					exp=reg;
-				}
-				localVars.put(name.toString(),(LlvmRegister)exp);
-			}
-		}
-		else
-			if(this.env.classes.get(Symbol.symbol(currentClass)).attributes.containsKey(Symbol.symbol(name.toString()))){
-				ClassInfo classe=this.env.classes.get(Symbol.symbol(currentClass));  // TODO ver se eh melhor trocar esse currentClass
-				int offset=classe.getAttributeOffset(Symbol.symbol(name.toString()))-1;
-				LlvmType type=classes.get(currentClass).typeList.get(offset);
-				LlvmRegister ptr=new LlvmRegister(new LlvmPointer(type));
-				List<LlvmValue> offsets=new ArrayList<LlvmValue>();
-				offsets.add(new LlvmRegister(0+"", type));
-				offsets.add(new LlvmRegister(offset+"", type));
-				assembler.add(new LlvmGetElementPointer(ptr,this.thisReg,offsets));
-				assembler.add(new LlvmStore(exp, ptr));
-			}
+//		if(localVars.containsKey(name.toString())){
+//			if(exp.type instanceof LlvmPointer){
+//				LlvmRegister ptr=localVars.get(name.toString());
+//				assembler.add(new LlvmStore(exp, ptr));
+//			}
+//			else{
+//				if(!(exp instanceof LlvmRegister)){
+//					LlvmRegister reg=new LlvmRegister(exp.type);
+//					assembler.add(new LlvmPlus(reg, exp.type, exp, new LlvmIntegerLiteral(0)));
+//					exp=reg;
+//				}
+//				localVars.put(name.toString(),(LlvmRegister)exp);
+//			}
+//		}
+//		else
+//			if(this.env.classes.get(Symbol.symbol(currentClass)).attributes.containsKey(Symbol.symbol(name.toString()))){
+//				ClassInfo classe=this.env.classes.get(Symbol.symbol(currentClass));  // TODO ver se eh melhor trocar esse currentClass
+//				int offset=classe.getAttributeOffset(Symbol.symbol(name.toString()))-1;
+//				LlvmType type=classes.get(currentClass).typeList.get(offset);
+//				LlvmRegister ptr=new LlvmRegister(new LlvmPointer(type));
+//				List<LlvmValue> offsets=new ArrayList<LlvmValue>();
+//				offsets.add(new LlvmRegister(0+"", type));
+//				offsets.add(new LlvmRegister(offset+"", type));
+//				assembler.add(new LlvmGetElementPointer(ptr,this.thisReg,offsets));
+//				assembler.add(new LlvmStore(exp, ptr));
+//			}
 		return null;
 	}
 	
@@ -515,7 +517,7 @@ public class Codegen extends VisitorAdapter{
 		System.out.println("LessThan"); // ok
 		LlvmValue op1 = n.lhs.accept(this);
 		LlvmValue op2 = n.rhs.accept(this);
-		LlvmType tipo=(LlvmType)n.type.accept(this);
+		LlvmType tipo=op1.type; //(LlvmType)n.type.accept(this);
 		LlvmRegister tmp=new LlvmRegister(tipo);
 		assembler.add(new LlvmIcmp(tmp, LlvmIcmp.SLT, tipo, op1, op2));
 		return tmp;
