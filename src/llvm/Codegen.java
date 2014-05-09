@@ -64,7 +64,7 @@ public class Codegen extends VisitorAdapter{
 		// Formato da String para o System.out.printlnijava "%d\n"
 		this.assembler.add(new LlvmConstantDeclaration("@.formatting.string", "private constant [4 x i8] c\"%d\\0A\\00\""));	
 		
-		criaClasses();
+		criaClasses(p);
 		
 		// NOTA: sempre que X.accept(Y), então Y.visit(X);
 		// NOTA: Logo, o comando abaixo irá chamar codeGenerator.visit(Program), linha 75
@@ -88,13 +88,16 @@ public class Codegen extends VisitorAdapter{
 		return r;
 	}
 	
-	private void criaClasses(){
+	private void criaClasses(Program p){
+		
 		Enumeration<Symbol> keys=env.classes.keys();
 		LlvmStructure classe;
 		ClassInfo classInfo;
 		LlvmType type;
 		while(keys.hasMoreElements()){
 			classInfo=env.classes.get((Symbol) keys.nextElement()); // pega cada classe
+			if(classInfo.name.toString().equals(p.mainClass.className.toString())) // Nao cria estrutura da classe principal
+				continue;
 			
 //			if(classInfo.base!=null)
 //				System.out.println("base: "+classInfo.base.name); // TODO usar esses códigos para herança
@@ -102,54 +105,35 @@ public class Codegen extends VisitorAdapter{
 //			System.out.println(classInfo.vtableIndex); // vtable? apareceu [ola] para o metodo ola
 //			System.out.println(classInfo.name);
 			
-			ArrayList<LlvmType> typeList=new ArrayList<LlvmType>(); // TODO pode checar se é a MainClass para não gerar
+			ArrayList<LlvmType> typeList=new ArrayList<LlvmType>();
 			for (Symbol atributo : classInfo.attributesOrder){ // pega as variaveis ordenadas e preenche uma lista de tipos
 				VarInfo varInfo=classInfo.attributes.get(atributo);
 				type=(LlvmType)varInfo.type.accept(this);
-//				if(type instanceof LlvmArray)
-//					typeList.add(new LlvmPointer(LlvmPrimitiveType.VOID)); // TODO
-//				else
-					typeList.add(type);
-//				System.out.println("access: "+varInfo.access);
-//				System.out.println("name: "+varInfo.name);
+				typeList.add(type);
 			}
 			
 			classe=new LlvmStructure(typeList,classInfo.name.toString());
 			classes.put(classInfo.name.toString(),classe);
 			assembler.add(classe.getInstruction());
 		}
-		// System.out.println(this.env.classes.get(Symbol.symbol("d")).getAttributeOffset(Symbol.symbol("c2"))); TODO disperdício, mas funcina
-		// System.out.println(this.env.classes.get(Symbol.symbol("c")).getMethodOffset(Symbol.symbol("a")));
 	}
 	
-	private LlvmRegister getVar(String name,String className){
+	private LlvmRegister getVar(String name,String className){ // TODO ---------------------------------------------------------
 		LlvmRegister lhs=null;
-		
-//		Iterator<String> hash=localVars.keySet().iterator(); // teste para ver o que está nas variáveis locais
-//		while (hash.hasNext()){
-//			String string = (String) hash.next();
-//			System.out.println(string +": "+ localVars.get(string).type +" "+ localVars.get(string));
-//		}
-//		
-//		System.out.println("nome: "+name+" classe: "+className+" localVar: "+localVars.get(name));
 		
 		if(localVars.containsKey(name))
 			lhs=localVars.get(name);
-		else{
-			name=name.substring(2); // tirando prefixo
+		else
 			if(this.env.classes.get(Symbol.symbol(className)).attributes.containsKey(Symbol.symbol(name))){
 				ClassInfo classe=this.env.classes.get(Symbol.symbol(className));
 				int offset=classe.getAttributeOffset(Symbol.symbol(name))-1;
 				LlvmType type=classes.get(className).typeList.get(offset);
 				lhs=new LlvmRegister(new LlvmPointer(type));
-				// offset=this.classes.get(classe).getOffset(offset); TODO acho que não precisa acessar por bytes o offset
-				//((LlvmArray)type).length=4;
 				List<LlvmValue> offsets=new ArrayList<LlvmValue>();
 				offsets.add(new LlvmRegister(0+"", type));
 				offsets.add(new LlvmRegister(offset+"", type));
 				assembler.add(new LlvmGetElementPointer(lhs,this.thisReg,offsets));
 			}
-		}
 		return lhs;
 	}
 	
@@ -277,7 +261,6 @@ public class Codegen extends VisitorAdapter{
 		
 		f=n.formals; // formals
 		LlvmRegister var=null;
-		LlvmValue ptr=null;
 		String name=null;
 		while(f!=null){
 			var=(LlvmRegister)f.head.accept(this);
@@ -320,52 +303,45 @@ public class Codegen extends VisitorAdapter{
 	public LlvmValue visit(Call n){
 		System.out.println("Call");
 		
-		String name=n.method.toString();//accept(this).toString().substring(2);
+		String name=n.method.toString();
+		
 		LlvmValue obj=n.object.accept(this);
-		name="@__"+name+"_"+obj.type.toString().substring(7);
+		
+		String objClassName=(obj.type instanceof LlvmPointer)? // TODO talvez desnecessario checar
+				((LlvmPointer)obj.type).content.toString():
+				obj.type.toString();
+		objClassName=objClassName.substring(7);
+		
+		name="@__"+name+"_"+objClassName;
 		
 		System.out.println("method: "+name);
-		System.out.println("objleitor: ---------------------"+obj);
+		System.out.println("objleitor: --------------------- "+obj);
 		
 		ArrayList<LlvmValue> params=new ArrayList<LlvmValue>();
+		List<LlvmType> pts = new LinkedList<LlvmType>();
 		util.List<Exp> actuals=n.actuals;
 		params.add(obj);
+		pts.add(obj.type); // checar isso
+		LlvmValue actual;
 		while(actuals!=null){
-			System.out.println("oi oi");
-			params.add(actuals.head.accept(this));
+			actual=actuals.head.accept(this);
+			params.add(actual);
+			pts.add(actual.type);
 			actuals=actuals.tail;
-			System.out.println(params.get(0));
 		}
 		
-		System.out.println(name);
-		
 		LlvmType type=(LlvmType)n.type.accept(this);
-		System.out.println(type);
+		LlvmRegister lhs=new LlvmRegister(type);
 		
+		assembler.add(new LlvmCall(lhs,type,pts,name,params));
 		
-		
-		List<LlvmType> pts = new LinkedList<LlvmType>();
-		pts.add(new LlvmPointer(LlvmPrimitiveType.I8));
-		
-		System.out.println(new LlvmCall(new LlvmRegister(type),
-				type,
-				new LlvmPointer(LlvmPrimitiveType.I8), // pts
-				name,
-				params
-				));
-		
-		assembler.add(new LlvmCall(new LlvmRegister(type),
-				type,
-				new LlvmPointer(LlvmPrimitiveType.I8), // pts
-				name,
-				params
-				));
-		return null;
+		return lhs;
 	}
 	
-	public LlvmValue visit(IdentifierExp n){
+	public LlvmValue visit(IdentifierExp n){ // TODO -----------------------------------------------------------
 		System.out.println("IdentifierExp " + n.toString()); // ok
-		LlvmRegister ptr=getVar(n.name.accept(this).toString(), currentClass);
+		LlvmRegister ptr=getVar(n.name.toString(), currentClass);
+		// ptr.type=new LlvmPointer(ptr.type);
 		LlvmRegister lhs=new LlvmRegister((LlvmType)n.type.accept(this));
 		assembler.add(new LlvmLoad(lhs, ptr));
 		return lhs;
@@ -376,11 +352,13 @@ public class Codegen extends VisitorAdapter{
 		return new LlvmNamedValue("%_"+n.toString(), null);
 	}
 	
-	public LlvmValue visit(Assign n){ // TODO continue ------------------------------------------------------------ Aqui
+	public LlvmValue visit(Assign n){ // TODO parece que so entre em identifier accept nas definicoes das variaveis locais
 		System.out.println("Assign");
 		
 		LlvmValue exp=n.exp.accept(this);
 		String name=n.var.toString();
+		
+		
 		if(localVars.containsKey(name.toString())){
 			if(exp.type instanceof LlvmPointer){
 				LlvmRegister ptr=localVars.get(name.toString());

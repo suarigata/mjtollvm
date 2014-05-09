@@ -7,6 +7,6 @@ public class LlvmLabel extends LlvmInstruction{
 	}
 	
 	public String toString(){
-		return label+":";
+		return label.toString().substring(1)+":";
 	}
 }
