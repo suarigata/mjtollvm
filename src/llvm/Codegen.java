@@ -109,11 +109,6 @@ public class Codegen extends VisitorAdapter{
 			for (Symbol atributo : classInfo.attributesOrder){ // pega as variaveis ordenadas e preenche uma lista de tipos
 				VarInfo varInfo=classInfo.attributes.get(atributo);
 				type=(LlvmType)varInfo.type.accept(this);
-//				System.out.println("--------------------------------------"+type);
-//				System.out.println("--------------------------------------"+varInfo.type);
-//				if(type instanceof LlvmPointer)
-//					System.out.println(((LlvmPointer)(type)).content);
-				//	type=new LlvmStructure(null, varInfo.type.toString());
 				typeList.add(type);
 			}
 			
@@ -133,10 +128,13 @@ public class Codegen extends VisitorAdapter{
 				ClassInfo classe=this.env.classes.get(Symbol.symbol(className));
 				int offset=classe.getAttributeOffset(Symbol.symbol(name))-1;
 				LlvmType type=classes.get(className).typeList.get(offset);
+				System.out.println("_---------"+type);
 				lhs=new LlvmRegister(type);
 				List<LlvmValue> offsets=new ArrayList<LlvmValue>();
 				offsets.add(new LlvmIntegerLiteral(0));
 				offsets.add(new LlvmIntegerLiteral(offset));
+//				System.out.println(new LlvmGetElementPointer(lhs,this.thisReg,offsets));
+//				System.out.println(new LlvmGetElementPointer(lhs,this.thisReg,offsets));
 				assembler.add(new LlvmGetElementPointer(lhs,this.thisReg,offsets));
 			}
 		return lhs;
@@ -249,7 +247,7 @@ public class Codegen extends VisitorAdapter{
 	}
 	
 	public LlvmValue visit(MethodDecl n){
-		System.out.println("MethodDecl"); // ok ?
+		System.out.println("MethodDecl"); // ok
 		localVars=new HashMap<>();
 		System.out.println("----------------------------- method init ----------------------------");
 		
@@ -306,7 +304,7 @@ public class Codegen extends VisitorAdapter{
 	}
 	
 	public LlvmValue visit(Call n){
-		System.out.println("Call");
+		System.out.println("Call"); // ok
 		
 		String name=n.method.toString();
 		
@@ -326,7 +324,7 @@ public class Codegen extends VisitorAdapter{
 		List<LlvmType> pts = new LinkedList<LlvmType>();
 		util.List<Exp> actuals=n.actuals;
 		params.add(obj);
-		pts.add(obj.type); // checar isso
+		pts.add(obj.type); // TODO checar isso
 		LlvmValue actual;
 		while(actuals!=null){
 			actual=actuals.head.accept(this);
@@ -343,12 +341,13 @@ public class Codegen extends VisitorAdapter{
 		return lhs;
 	}
 	
-	public LlvmValue visit(IdentifierExp n){ // TODO -----------------------------------------------------------
+	public LlvmValue visit(IdentifierExp n){
 		System.out.println("IdentifierExp " + n.toString()); // ok
 		LlvmValue ptr=getVar(n.name.toString(), currentClass);
 		ptr = new LlvmRegister(ptr.toString(), new LlvmPointer(ptr.type));
 		LlvmRegister lhs=new LlvmRegister((LlvmType)n.type.accept(this));
 		assembler.add(new LlvmLoad(lhs, ptr));
+		System.out.println(lhs); // TODO tirar isso
 		return lhs;
 	}
 	
@@ -357,8 +356,8 @@ public class Codegen extends VisitorAdapter{
 		return new LlvmNamedValue("%_"+n.toString(), null);
 	}
 	
-	public LlvmValue visit(Assign n){ // TODO parece que so entre em identifier accept nas definicoes das variaveis locais
-		System.out.println("Assign");
+	public LlvmValue visit(Assign n){
+		System.out.println("Assign"); // ok
 		
 		LlvmValue exp=n.exp.accept(this);
 		String name=n.var.toString();
@@ -398,43 +397,44 @@ public class Codegen extends VisitorAdapter{
 	}
 	
 	public LlvmValue visit(ArrayAssign n){
-		System.out.println("ArrayAssign");
+		System.out.println("ArrayAssign"); // ok
+		int index = Integer.parseInt(n.index.accept(this).toString())+1; // primeira posicao eh o tamanho
+		List<LlvmValue> offsets = new LinkedList<LlvmValue>();
+		offsets.add(new LlvmIntegerLiteral(index));
 		
-		LlvmValue i=n.index.accept(this);
-		LlvmValue vetorName=n.var.accept(this);
-		LlvmValue valor=n.value.accept(this);
-		LlvmRegister vetor=getVar(vetorName.toString(), currentClass);
-		LlvmRegister lhs=new LlvmRegister(vetor.type);
-		List<LlvmValue> offsets=new ArrayList<LlvmValue>();
-		// offsets.add(new LlvmRegister(i+"", ((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content )); // talvez tirar pointer TODO baixo
-		offsets.add(new LlvmIntegerLiteral(Integer.parseInt(i+""))); // pus essa no lugar de cima
-		// offsets.add(new LlvmRegister(0+"", ((LlvmArray)(vetor.type)).content));
-		assembler.add(new LlvmGetElementPointer(lhs, vetor, offsets));
-		assembler.add(new LlvmStore(valor, lhs));
-		
+		LlvmRegister lhs = new LlvmRegister(new LlvmPointer(LlvmPrimitiveType.I32));
+		LlvmRegister ptr = new LlvmRegister(new LlvmPointer(LlvmPrimitiveType.I32));
+		LlvmRegister array=getVar(n.var.toString(),currentClass);
+		LlvmRegister arrayPtr=new LlvmRegister(array.name, new LlvmPointer(array.type));
+		assembler.add(new LlvmLoad(ptr, arrayPtr));
+		assembler.add(new LlvmGetElementPointer(lhs, ptr, offsets));
+		assembler.add(new LlvmStore(n.value.accept(this), lhs));
 		return null;
 	}
 	
+	private LlvmRegister arrayLookupPointer(LlvmValue array,int i){
+		List<LlvmValue> offsets = new LinkedList<LlvmValue>();
+		offsets.add(new LlvmIntegerLiteral(i));
+		LlvmRegister ptr = new LlvmRegister(new LlvmPointer(LlvmPrimitiveType.I32));
+		assembler.add(new LlvmGetElementPointer(ptr, array , offsets));
+		return ptr;
+	}
+	
 	public LlvmValue visit(ArrayLookup n){
-		System.out.println("ArrayLookup");
-		
-		LlvmValue i=n.index.accept(this);
-		LlvmValue vetorName=n.array.accept(this);
-		LlvmRegister vetor=getVar(vetorName.toString(), currentClass);
-		LlvmRegister pt=new LlvmRegister(vetor.type);
-		List<LlvmValue> offsets=new ArrayList<LlvmValue>();
-		// offsets.add(new LlvmRegister(i+"", ((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content )); TODO substituido pela de baixo
-		offsets.add(new LlvmIntegerLiteral(Integer.parseInt(i+""))); // pus essa no lugar de cima
-		// offsets.add(new LlvmRegister(0+"", ((LlvmArray)(vetor.type)).content));
-		assembler.add(new LlvmGetElementPointer(pt, vetor, offsets));
-		LlvmRegister lhs=new LlvmRegister(((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content);
-		assembler.add(new LlvmLoad(lhs, pt));
+		System.out.println("ArrayLookup"); // ok
+		int index = Integer.parseInt(n.index.accept(this).toString())+1; // primeira posicao eh o tamanho
+		LlvmValue array=n.array.accept(this);
+		LlvmRegister lhs = new LlvmRegister(LlvmPrimitiveType.I32);
+		assembler.add(new LlvmLoad(lhs, arrayLookupPointer(array, index)));
 		return lhs;
 	}
 	
 	public LlvmValue visit(ArrayLength n){
-		System.out.println("ArrayLength"); // TODO isso acho que e atributo do vetor.length
-		return n.array.accept(this);
+		System.out.println("ArrayLength"); // ok
+		LlvmValue array=n.array.accept(this);
+		LlvmRegister lhs = new LlvmRegister(LlvmPrimitiveType.I32);
+		assembler.add(new LlvmLoad(lhs, arrayLookupPointer(array, 0)));
+		return lhs;
 	}
 	
 	public LlvmValue visit(This n){
@@ -444,11 +444,11 @@ public class Codegen extends VisitorAdapter{
 	
 	// ------------------------------------------------------------------------------------------ News
 	public LlvmValue visit(NewArray n){
-		System.out.println("NewArray");
+		System.out.println("NewArray"); // ok
 		LlvmValue size=n.size.accept(this);
-		LlvmType type=(LlvmType)n.type.accept(this);
-		LlvmRegister lhs=new LlvmRegister(new LlvmPointer(type)); // TODO ver os ponteiros
-		assembler.add(new LlvmMalloc(lhs,type,new LlvmIntegerLiteral(Integer.parseInt(size.toString())+1)));
+		LlvmRegister lhs=new LlvmRegister((LlvmType)n.type.accept(this));
+		assembler.add(new LlvmMalloc(lhs,LlvmPrimitiveType.I32,new LlvmIntegerLiteral(Integer.parseInt(size.toString())+1)));
+		assembler.add(new LlvmStore(size, lhs));
 		return lhs;
 	}
 	
