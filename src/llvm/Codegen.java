@@ -109,6 +109,11 @@ public class Codegen extends VisitorAdapter{
 			for (Symbol atributo : classInfo.attributesOrder){ // pega as variaveis ordenadas e preenche uma lista de tipos
 				VarInfo varInfo=classInfo.attributes.get(atributo);
 				type=(LlvmType)varInfo.type.accept(this);
+//				System.out.println("--------------------------------------"+type);
+//				System.out.println("--------------------------------------"+varInfo.type);
+//				if(type instanceof LlvmPointer)
+//					System.out.println(((LlvmPointer)(type)).content);
+				//	type=new LlvmStructure(null, varInfo.type.toString());
 				typeList.add(type);
 			}
 			
@@ -128,10 +133,10 @@ public class Codegen extends VisitorAdapter{
 				ClassInfo classe=this.env.classes.get(Symbol.symbol(className));
 				int offset=classe.getAttributeOffset(Symbol.symbol(name))-1;
 				LlvmType type=classes.get(className).typeList.get(offset);
-				lhs=new LlvmRegister(new LlvmPointer(type));
+				lhs=new LlvmRegister(type);
 				List<LlvmValue> offsets=new ArrayList<LlvmValue>();
-				offsets.add(new LlvmRegister(0+"", type));
-				offsets.add(new LlvmRegister(offset+"", type));
+				offsets.add(new LlvmIntegerLiteral(0));
+				offsets.add(new LlvmIntegerLiteral(offset));
 				assembler.add(new LlvmGetElementPointer(lhs,this.thisReg,offsets));
 			}
 		return lhs;
@@ -401,7 +406,8 @@ public class Codegen extends VisitorAdapter{
 		LlvmRegister vetor=getVar(vetorName.toString(), currentClass);
 		LlvmRegister lhs=new LlvmRegister(vetor.type);
 		List<LlvmValue> offsets=new ArrayList<LlvmValue>();
-		offsets.add(new LlvmRegister(i+"", ((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content )); // talvez tirar pointer
+		// offsets.add(new LlvmRegister(i+"", ((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content )); // talvez tirar pointer TODO baixo
+		offsets.add(new LlvmIntegerLiteral(Integer.parseInt(i+""))); // pus essa no lugar de cima
 		// offsets.add(new LlvmRegister(0+"", ((LlvmArray)(vetor.type)).content));
 		assembler.add(new LlvmGetElementPointer(lhs, vetor, offsets));
 		assembler.add(new LlvmStore(valor, lhs));
@@ -417,7 +423,8 @@ public class Codegen extends VisitorAdapter{
 		LlvmRegister vetor=getVar(vetorName.toString(), currentClass);
 		LlvmRegister pt=new LlvmRegister(vetor.type);
 		List<LlvmValue> offsets=new ArrayList<LlvmValue>();
-		offsets.add(new LlvmRegister(i+"", ((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content ));
+		// offsets.add(new LlvmRegister(i+"", ((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content )); TODO substituido pela de baixo
+		offsets.add(new LlvmIntegerLiteral(Integer.parseInt(i+""))); // pus essa no lugar de cima
 		// offsets.add(new LlvmRegister(0+"", ((LlvmArray)(vetor.type)).content));
 		assembler.add(new LlvmGetElementPointer(pt, vetor, offsets));
 		LlvmRegister lhs=new LlvmRegister(((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content);
@@ -486,6 +493,7 @@ public class Codegen extends VisitorAdapter{
 		LlvmLabelValue brTrue=LlvmLabelValue.create();
 		LlvmLabelValue brFalse=LlvmLabelValue.create();
 		LlvmLabelValue topo=LlvmLabelValue.create();
+		assembler.add(new LlvmBranch(null, null, topo));
 		assembler.add(new LlvmLabel(topo));
 		LlvmValue cond=n.condition.accept(this);
 		assembler.add(new LlvmBranch(cond, brTrue, brFalse));
@@ -598,6 +606,6 @@ public class Codegen extends VisitorAdapter{
 	
 	public LlvmType visit(IdentifierType n){
 		System.out.println("IdentifierType"); // ok
-		return new LlvmPointer(classes.get(n.name));
+		return new LlvmPointer(new LlvmStructure(new ArrayList<LlvmType>(), n.name));
 	}
 }
