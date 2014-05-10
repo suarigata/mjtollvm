@@ -235,12 +235,12 @@ public class Codegen extends VisitorAdapter{
 	
 	public LlvmValue visit(Formal n){
 		System.out.println("Formal"); // ok
-		return new LlvmRegister(n.name.accept(this).toString(),(LlvmType)n.type.accept(this)); // memoria tirei daqui o pointer do segundo
+		return new LlvmRegister(n.name.accept(this).toString(),(LlvmType)n.type.accept(this));
 	}
 	
 	public LlvmValue visit(VarDecl n){
 		System.out.println("VarDecl"); // ok
-		return new LlvmRegister(n.name.accept(this).toString(),new LlvmPointer((LlvmType)n.type.accept(this))); // memoria
+		return new LlvmRegister(n.name.accept(this).toString(),(LlvmType)n.type.accept(this));
 	}
 	
 	public LlvmValue visit(MethodDecl n){
@@ -340,8 +340,8 @@ public class Codegen extends VisitorAdapter{
 	
 	public LlvmValue visit(IdentifierExp n){ // TODO -----------------------------------------------------------
 		System.out.println("IdentifierExp " + n.toString()); // ok
-		LlvmRegister ptr=getVar(n.name.toString(), currentClass);
-		// ptr.type=new LlvmPointer(ptr.type);
+		LlvmValue ptr=getVar(n.name.toString(), currentClass);
+		ptr = new LlvmRegister(ptr.toString(), new LlvmPointer(ptr.type));
 		LlvmRegister lhs=new LlvmRegister((LlvmType)n.type.accept(this));
 		assembler.add(new LlvmLoad(lhs, ptr));
 		return lhs;
@@ -359,7 +359,9 @@ public class Codegen extends VisitorAdapter{
 		String name=n.var.toString();
 		
 		LlvmValue var=getVar(name, currentClass);
-		assembler.add(new LlvmStore(exp, var));
+		LlvmRegister lhs=new LlvmRegister(var.toString(), new LlvmPointer(var.type));
+		System.out.println("Var ----------------------------------- "+var);
+		assembler.add(new LlvmStore(exp, lhs));
 		
 //		if(localVars.containsKey(name.toString())){
 //			if(exp.type instanceof LlvmPointer){
@@ -399,7 +401,7 @@ public class Codegen extends VisitorAdapter{
 		LlvmRegister vetor=getVar(vetorName.toString(), currentClass);
 		LlvmRegister lhs=new LlvmRegister(vetor.type);
 		List<LlvmValue> offsets=new ArrayList<LlvmValue>();
-		offsets.add(new LlvmRegister(i+"", ((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content )); // TODO ver la no getVar se muda o tipo que pega
+		offsets.add(new LlvmRegister(i+"", ((LlvmArray)(((LlvmPointer)(vetor.type)).content)).content )); // talvez tirar pointer
 		// offsets.add(new LlvmRegister(0+"", ((LlvmArray)(vetor.type)).content));
 		assembler.add(new LlvmGetElementPointer(lhs, vetor, offsets));
 		assembler.add(new LlvmStore(valor, lhs));
@@ -474,6 +476,7 @@ public class Codegen extends VisitorAdapter{
 		assembler.add(new LlvmLabel(brFalse));
 		if(n.elseClause!=null)
 			n.elseClause.accept(this);
+		assembler.add(new LlvmBranch(null, null, exit));
 		assembler.add(new LlvmLabel(exit));
 		return null;
 	}
