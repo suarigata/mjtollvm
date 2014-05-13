@@ -1,0 +1,28 @@
+#!/bin/bash
+javac BinarySearch.java
+java BinarySearch> BinarySearch
+rm *.class
+javac BinaryTree.java
+java BinaryTree> BinaryTree
+rm *.class
+javac BubbleSort.java
+java BubbleSort> BubbleSort
+rm *.class
+javac Factorial.java
+java Factorial> Factorial
+rm *.class
+javac LinearSearch.java
+java LinearSearch> LinearSearch
+rm *.class
+javac LinkedList.java
+java LinkedList> LinkedList
+rm *.class
+javac QuickSort.java
+java QuickSort> QuickSort
+rm *.class
+javac TreeVisitor.java
+java TreeVisitor> TreeVisitor
+rm *.class
+javac teste.java
+java a> teste
+rm *.class

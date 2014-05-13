@@ -1,0 +1,19 @@
+#!/bin/bash
+./roda test/BinarySearch.java 
+diff test/BinarySearch test/BinarySearch.java.out 
+./roda test/BinaryTree.java 
+diff test/BinaryTree test/BinaryTree.java.out 
+./roda test/BubbleSort.java 
+diff test/BubbleSort test/BubbleSort.java.out 
+./roda test/Factorial.java
+diff test/Factorial test/Factorial.java.out 
+./roda test/LinearSearch.java 
+diff test/LinearSearch test/LinearSearch.java.out 
+./roda test/LinkedList.java 
+diff test/LinkedList test/LinkedList.java.out 
+./roda test/QuickSort.java 
+diff test/QuickSort test/QuickSort.java.out 
+./roda test/TreeVisitor.java 
+diff test/TreeVisitor test/TreeVisitor.java.out 
+./roda test/teste.java 
+diff test/teste test/teste.java.out

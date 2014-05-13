@@ -118,7 +118,7 @@ public class Codegen extends VisitorAdapter{
 		}
 	}
 	
-	private LlvmRegister getVar(String name,String className){ // TODO ---------------------------------------------------------
+	private LlvmRegister getVar(String name,String className){
 		LlvmRegister lhs=null;
 		
 		if(localVars.containsKey(name))
@@ -272,10 +272,8 @@ public class Codegen extends VisitorAdapter{
 		util.List<VarDecl> l=n.locals; // locals
 		while(l!=null){
 			var=(LlvmRegister)l.head.accept(this);
-			//if(!(var.type instanceof LlvmArray)){ // TODO aqui acho que é pra barrar o alloca quando for intArrayType
-				assembler.add(new LlvmAlloca(var, var.type));
-				localVars.put(l.head.name.toString(),var);
-			//}
+			assembler.add(new LlvmAlloca(var, var.type));
+			localVars.put(l.head.name.toString(),var);
 			l=l.tail;
 		}
 		
@@ -358,32 +356,6 @@ public class Codegen extends VisitorAdapter{
 		
 		assembler.add(new LlvmStore(exp, lhs));
 		
-//		if(localVars.containsKey(name.toString())){
-//			if(exp.type instanceof LlvmPointer){
-//				LlvmRegister ptr=localVars.get(name.toString());
-//				assembler.add(new LlvmStore(exp, ptr));
-//			}
-//			else{
-//				if(!(exp instanceof LlvmRegister)){
-//					LlvmRegister reg=new LlvmRegister(exp.type);
-//					assembler.add(new LlvmPlus(reg, exp.type, exp, new LlvmIntegerLiteral(0)));
-//					exp=reg;
-//				}
-//				localVars.put(name.toString(),(LlvmRegister)exp);
-//			}
-//		}
-//		else
-//			if(this.env.classes.get(Symbol.symbol(currentClass)).attributes.containsKey(Symbol.symbol(name.toString()))){
-//				ClassInfo classe=this.env.classes.get(Symbol.symbol(currentClass));  // TODO ver se eh melhor trocar esse currentClass
-//				int offset=classe.getAttributeOffset(Symbol.symbol(name.toString()))-1;
-//				LlvmType type=classes.get(currentClass).typeList.get(offset);
-//				LlvmRegister ptr=new LlvmRegister(new LlvmPointer(type));
-//				List<LlvmValue> offsets=new ArrayList<LlvmValue>();
-//				offsets.add(new LlvmRegister(0+"", type));
-//				offsets.add(new LlvmRegister(offset+"", type));
-//				assembler.add(new LlvmGetElementPointer(ptr,this.thisReg,offsets));
-//				assembler.add(new LlvmStore(exp, ptr));
-//			}
 		return null;
 	}
 	
