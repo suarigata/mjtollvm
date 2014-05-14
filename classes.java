@@ -6,26 +6,27 @@ class a
     }
 }
 
-class b{
+class b extends c{
 	int v1;
 	int v2;
+	int c2;
+	public int oi(){
+		b obj;
+		obj=new b();
+	return 0;}
+	public int ia1(){return 1;}
 }
 
-class c{
+class c extends d{
 	b c1;
 	int c2;
-	public int ola(int oi){
-		boolean ola;
-		int o;
-		c2=o;
-		return c2;
-	}
+	public int oi(){return 0;}
+	public int ia2(){return 1;}
 }
 
-class d extends c{
+class d{
 	boolean d1;
-	int d2;
-	c d3;
-	int d4;
 	int c2;
+	public int oi(){return 0;}
+	public int ia3(){return 1;}
 }

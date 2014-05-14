@@ -1,4 +1,5 @@
 #!/bin/bash
+# Apos rodar, o teste esta correto se o arquivo DIFF gerado estiver vazio.
 ./roda test/BinarySearch.java 
 diff test/BinarySearch test/BinarySearch.java.out > DIFF
 ./roda test/BinaryTree.java 

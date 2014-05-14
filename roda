@@ -1,5 +1,7 @@
 #!/bin/bash
+# Para usar, deve-se passar o endereco do arquivo minijava como argumento
+# Entao este script "compila o compilador", gera o arquivo llvm e executa pondo a saida num arquivo .out
 make
 make run INPUT=$1 OUTPUT=$1".s"
 #make bytecode INPUT=teste.s OUTPUT=teste.bc
-lli $1".s" > $1".out"
+#lli $1".s" > $1".out"

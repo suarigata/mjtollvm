@@ -1,4 +1,5 @@
 #!/bin/bash
+# Cria arquivos com as respostas do programa em Java
 javac BinarySearch.java
 java BinarySearch> BinarySearch
 rm *.class

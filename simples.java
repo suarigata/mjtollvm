@@ -1,7 +1,10 @@
 class a{
 	public static void main(String[] args){
-		System.out.println(new b().geral(3));
+		System.out.println(new c().geral(3));
 	}
+}
+
+class c extends b{
 }
 
 class b{

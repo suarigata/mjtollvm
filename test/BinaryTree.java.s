@@ -1,6 +1,6 @@
 @.formatting.string = private constant [4 x i8] c"%d\0A\00"
-%class.BT = type { }
 %class.Tree = type { %class.Tree *, %class.Tree *, i32, i1, i1, %class.Tree * }
+%class.BT = type { }
 define i32 @main() {
 entry:
   %tmp0 = alloca i32

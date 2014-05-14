@@ -352,7 +352,7 @@ class Visitor {
 
 
 class MyVisitor extends Visitor {
-
+	int i;
     public int visit(Tree n){
 	int nti ;
 

@@ -1,7 +1,7 @@
 @.formatting.string = private constant [4 x i8] c"%d\0A\00"
-%class.LL = type { }
 %class.List = type { %class.Element *, %class.List *, i1 }
 %class.Element = type { i32, i32, i1 }
+%class.LL = type { }
 define i32 @main() {
 entry:
   %tmp0 = alloca i32

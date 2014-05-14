@@ -57,7 +57,9 @@ public  class LlvmCall extends LlvmInstruction{
 			if (fnType != null)
 				fnTypeResult = fnType.toString();
 		}
-
-		return "  " + lhs + " = " + "call " + type + " " + fnTypeResult + " " + fnName +  "(" + arguments + ")"; 
+		
+		if(lhs!=null)
+			return "  " + lhs + " = " + "call " + type + " " + fnTypeResult + " " + fnName +  "(" + arguments + ")";
+		return "  call " + type + " " + fnTypeResult + " " + fnName +  "(" + arguments + ")";
 	}
 }
