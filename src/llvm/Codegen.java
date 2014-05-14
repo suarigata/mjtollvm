@@ -495,7 +495,7 @@ public class Codegen extends VisitorAdapter{
 		LlvmValue exp=n.exp.accept(this);
 		LlvmType tipo=(LlvmType)n.type.accept(this);
 		LlvmRegister lhs=new LlvmRegister(tipo);
-		LlvmIntegerLiteral um=new LlvmIntegerLiteral(1);
+		LlvmIntegerLiteral um=new LlvmIntegerLiteral(-1);
 		assembler.add(new LlvmXor(lhs, tipo, exp, um));
 		return lhs;
 	}
@@ -503,7 +503,7 @@ public class Codegen extends VisitorAdapter{
 	public LlvmValue visit(And n){
 		System.out.println("And"); // ok
 		LlvmValue op1=n.lhs.accept(this);
-		LlvmValue op2=n.lhs.accept(this);
+		LlvmValue op2=n.rhs.accept(this);
 		LlvmType tipo=(LlvmType)n.type.accept(this);
 		LlvmRegister lhs=new LlvmRegister(tipo);
 		assembler.add(new LlvmAnd(lhs, tipo, op1, op2));

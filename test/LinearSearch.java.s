@@ -109,7 +109,7 @@ label7:
   %tmp54 = load i32 * %_aux01
   %tmp55 = load i32 * %_aux02
   %tmp56 = icmp slt i32 %tmp54, %tmp55
-  %tmp57 = xor i1 %tmp56, 1
+  %tmp57 = xor i1 %tmp56, -1
   br i1 %tmp57, label %label9, label %label10
 label9:
   store i32 0, i32 * %_nt

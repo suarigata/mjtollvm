@@ -2,4 +2,4 @@
 make
 make run INPUT=$1 OUTPUT=$1".s"
 #make bytecode INPUT=teste.s OUTPUT=teste.bc
-#lli $1".s" > $1".out"
+lli $1".s" > $1".out"

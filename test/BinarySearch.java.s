@@ -262,7 +262,7 @@ label43:
   %tmp101 = load i32 * %_num1
   %tmp102 = load i32 * %_aux02
   %tmp103 = icmp slt i32 %tmp101, %tmp102
-  %tmp104 = xor i1 %tmp103, 1
+  %tmp104 = xor i1 %tmp103, -1
   br i1 %tmp104, label %label45, label %label46
 label45:
   store i1 false, i1 * %_retval

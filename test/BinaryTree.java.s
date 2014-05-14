@@ -201,7 +201,7 @@ label1:
   %tmp92 = load i32 * %_num1
   %tmp93 = load i32 * %_nti
   %tmp94 = icmp slt i32 %tmp92, %tmp93
-  %tmp95 = xor i1 %tmp94, 1
+  %tmp95 = xor i1 %tmp94, -1
   br i1 %tmp95, label %label3, label %label4
 label3:
   store i1 false, i1 * %_ntb
@@ -364,10 +364,10 @@ label28:
 label33:
   %tmp147 = load %class.Tree * * %_current_node
   %tmp148 = call i1 (%class.Tree *)* @__GetHas_Right_Tree(%class.Tree * %tmp147)
-  %tmp149 = xor i1 %tmp148, 1
+  %tmp149 = xor i1 %tmp148, -1
   %tmp150 = load %class.Tree * * %_current_node
-  %tmp151 = call i1 (%class.Tree *)* @__GetHas_Right_Tree(%class.Tree * %tmp150)
-  %tmp152 = xor i1 %tmp151, 1
+  %tmp151 = call i1 (%class.Tree *)* @__GetHas_Left_Tree(%class.Tree * %tmp150)
+  %tmp152 = xor i1 %tmp151, -1
   %tmp153 = and i1 %tmp149, %tmp152
   br i1 %tmp153, label %label36, label %label37
 label36:

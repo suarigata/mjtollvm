@@ -93,7 +93,7 @@ label6:
   %tmp41 = load i32 * %_aux03
   %tmp42 = load i32 * %_v
   %tmp43 = icmp slt i32 %tmp41, %tmp42
-  %tmp44 = xor i1 %tmp43, 1
+  %tmp44 = xor i1 %tmp43, -1
   br i1 %tmp44, label %label9, label %label10
 label9:
   store i1 false, i1 * %_cont02
@@ -123,7 +123,7 @@ label12:
   %tmp54 = load i32 * %_v
   %tmp55 = load i32 * %_aux03
   %tmp56 = icmp slt i32 %tmp54, %tmp55
-  %tmp57 = xor i1 %tmp56, 1
+  %tmp57 = xor i1 %tmp56, -1
   br i1 %tmp57, label %label15, label %label16
 label15:
   store i1 false, i1 * %_cont02

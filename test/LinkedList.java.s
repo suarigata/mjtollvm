@@ -68,7 +68,7 @@ entry:
   %tmp23 = getelementptr %class.Element * %this, i32 0, i32 0
   %tmp24 = load i32 * %tmp23
   %tmp25 = call i1 (%class.Element *, i32, i32)* @__Compare_Element(%class.Element * %this, i32 %tmp22, i32 %tmp24)
-  %tmp26 = xor i1 %tmp25, 1
+  %tmp26 = xor i1 %tmp25, -1
   br i1 %tmp26, label %label0, label %label1
 label0:
   store i1 false, i1 * %_ret_val
@@ -81,7 +81,7 @@ label1:
   %tmp30 = getelementptr %class.Element * %this, i32 0, i32 1
   %tmp31 = load i32 * %tmp30
   %tmp32 = call i1 (%class.Element *, i32, i32)* @__Compare_Element(%class.Element * %this, i32 %tmp29, i32 %tmp31)
-  %tmp33 = xor i1 %tmp32, 1
+  %tmp33 = xor i1 %tmp32, -1
   br i1 %tmp33, label %label3, label %label4
 label3:
   store i1 false, i1 * %_ret_val
@@ -93,7 +93,7 @@ label4:
 label6:
   %tmp36 = load %class.Element * * %_other
   %tmp37 = call i1 (%class.Element *)* @__GetMarried_Element(%class.Element * %tmp36)
-  %tmp38 = xor i1 %tmp37, 1
+  %tmp38 = xor i1 %tmp37, -1
   br i1 %tmp38, label %label9, label %label10
 label9:
   store i1 false, i1 * %_ret_val
@@ -146,7 +146,7 @@ label16:
   %tmp47 = load i32 * %_num1
   %tmp48 = load i32 * %_aux02
   %tmp49 = icmp slt i32 %tmp47, %tmp48
-  %tmp50 = xor i1 %tmp49, 1
+  %tmp50 = xor i1 %tmp49, -1
   br i1 %tmp50, label %label18, label %label19
 label18:
   store i1 false, i1 * %_retval
@@ -242,9 +242,9 @@ entry:
   br label %label23
 label23:
   %tmp74 = load i1 * %_var_end
-  %tmp75 = xor i1 %tmp74, 1
-  %tmp76 = load i1 * %_var_end
-  %tmp77 = xor i1 %tmp76, 1
+  %tmp75 = xor i1 %tmp74, -1
+  %tmp76 = load i1 * %_ret_val
+  %tmp77 = xor i1 %tmp76, -1
   %tmp78 = and i1 %tmp75, %tmp77
   br i1 %tmp78, label %label21, label %label22
 label21:
@@ -282,7 +282,7 @@ label25:
   br label %label26
 label26:
   %tmp96 = load i1 * %_ret_val
-  %tmp97 = xor i1 %tmp96, 1
+  %tmp97 = xor i1 %tmp96, -1
   br i1 %tmp97, label %label30, label %label31
 label30:
   %tmp98 = load %class.List * * %_aux01
@@ -327,7 +327,7 @@ entry:
   br label %label35
 label35:
   %tmp110 = load i1 * %_var_end
-  %tmp111 = xor i1 %tmp110, 1
+  %tmp111 = xor i1 %tmp110, -1
   br i1 %tmp111, label %label33, label %label34
 label33:
   %tmp112 = load %class.Element * * %_e
@@ -388,7 +388,7 @@ entry:
   br label %label41
 label41:
   %tmp132 = load i1 * %_var_end
-  %tmp133 = xor i1 %tmp132, 1
+  %tmp133 = xor i1 %tmp132, -1
   br i1 %tmp133, label %label39, label %label40
 label39:
   %tmp134 = load %class.Element * * %_var_elem
