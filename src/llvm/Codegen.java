@@ -37,6 +37,7 @@ package llvm;
 
 import semant.Env;
 import symbol.ClassInfo;
+import symbol.MethodInfo;
 import symbol.Symbol;
 import symbol.VarInfo;
 import syntaxtree.*;
@@ -208,7 +209,7 @@ public class Codegen extends VisitorAdapter{
 		return null;
 	}
 	
-	private void createConstructor(){ // XXX
+	private void createConstructor(util.List<MethodDecl> methods){ // XXX
 		
 		ArrayList<LlvmValue> args=new ArrayList<LlvmValue>();
 		args.add(thisReg);
@@ -232,15 +233,64 @@ public class Codegen extends VisitorAdapter{
 		assembler.add(new LlvmBitcast(lhs, this.thisReg, new LlvmPointer(lhs.type)));
 		
 		int i;
-		for(i=0;i<numMethod;i++){
-			// transforma a funcao em um ponteiro generico para i8 TODO parece que o que esta em cima esta bom
-			// assembler.add(new LlvmBitcast(lhs, source, toType));
+		LlvmRegister ptr;
+		LlvmRegister content;
+		List<LlvmValue> offsets;
+		MethodInfo mi=null;
+		while(methods!=null){
+			System.out.println(methods.head.name.toString());
+			i=ci.vtableIndex.indexOf(Symbol.symbol(methods.head.name.toString()));
+			System.out.println(i);
+			System.out.println(ci.methods.get(ci.vtableIndex.get(i)));
+			mi=ci.methods.get(ci.vtableIndex.get(i));
+			System.out.println("---------------------"+mi+"----------------------------------");
+			
+			// symbol.MethodInfo mi=ci.methods.get(ci.vtableIndex.get(i));
+			// transforma a funcao em um ponteiro generico para i8
+			content=new LlvmRegister(new LlvmPointer(LlvmPrimitiveType.I8));
+			args=new ArrayList<LlvmValue>();
+			args.add(thisReg.type);
+			util.List<VarInfo> f=mi.formals;
+			while(f!=null){
+				args.add((LlvmType)f.head.type.accept(this));
+				f=f.tail;
+			}
+			System.out.println(new LlvmBitcast(content, (LlvmType)mi.type.accept(this), new LlvmPointer(LlvmPrimitiveType.I8), "@__" + mi.name + "_" + this.currentClass, args));
+			assembler.add(new LlvmBitcast(content, (LlvmType)mi.type.accept(this), new LlvmPointer(LlvmPrimitiveType.I8), "@__" + mi.name + "_" + this.currentClass, args));
 			// getptr do offset da funcao
-			// assembler.add(new LlvmGetElementPointer(lhs, source, offsets));
+			offsets = new LinkedList<LlvmValue>();
+			offsets.add(new LlvmIntegerLiteral(0));
+			offsets.add(new LlvmIntegerLiteral(i));
+			ptr=new LlvmRegister(new LlvmArray(numMethod, new LlvmPointer(LlvmPrimitiveType.I8)));
+			assembler.add(new LlvmGetElementPointer(ptr, new LlvmRegister(lhs.name, new LlvmPointer(lhs.type)), offsets));
 			// store ponteiro i8
-			// assembler.add(new LlvmStore(content, address));
+			assembler.add(new LlvmStore(content, new LlvmRegister(ptr.name, new LlvmPointer(new LlvmPointer(LlvmPrimitiveType.I8)))));
+			
+			methods=methods.tail;
 		}
 		
+//		for(i=0;i<numMethod;i++){
+//			symbol.MethodInfo mi=ci.methods.get(ci.vtableIndex.get(i));
+//			// transforma a funcao em um ponteiro generico para i8
+//			content=new LlvmRegister(new LlvmPointer(LlvmPrimitiveType.I8));
+//			args=new ArrayList<LlvmValue>();
+//			args.add(thisReg.type);
+//			util.List<VarInfo> f=mi.formals;
+//			while(f!=null){
+//				args.add((LlvmType)f.head.type.accept(this));
+//				f=f.tail;
+//			}
+//			System.out.println(new LlvmBitcast(content, (LlvmType)mi.type.accept(this), new LlvmPointer(LlvmPrimitiveType.I8), "@__" + mi.name + "_" + this.currentClass, args));
+//			assembler.add(new LlvmBitcast(content, (LlvmType)mi.type.accept(this), new LlvmPointer(LlvmPrimitiveType.I8), "@__" + mi.name + "_" + this.currentClass, args));
+//			// getptr do offset da funcao
+//			offsets = new LinkedList<LlvmValue>();
+//			offsets.add(new LlvmIntegerLiteral(0));
+//			offsets.add(new LlvmIntegerLiteral(i));
+//			ptr=new LlvmRegister(new LlvmArray(numMethod, new LlvmPointer(LlvmPrimitiveType.I8)));
+//			assembler.add(new LlvmGetElementPointer(ptr, new LlvmRegister(lhs.name, new LlvmPointer(lhs.type)), offsets));
+//			// store ponteiro i8
+//			assembler.add(new LlvmStore(content, new LlvmRegister(ptr.name, new LlvmPointer(new LlvmPointer(LlvmPrimitiveType.I8)))));
+//		}
 		assembler.add(new LlvmRet(new LlvmNamedValue("", LlvmPrimitiveType.VOID)));
 		assembler.add(new LlvmCloseDefinition());
 	}
@@ -251,7 +301,8 @@ public class Codegen extends VisitorAdapter{
 		
 		currentClass=n.name.toString();
 		thisReg=new LlvmRegister("%this",new LlvmPointer(classes.get(currentClass)));
-		createConstructor();
+		if(n.methodList!=null)
+			createConstructor(n.methodList);
 		
 		util.List<MethodDecl> m=n.methodList;
 		while(m!=null){
@@ -266,7 +317,8 @@ public class Codegen extends VisitorAdapter{
 		
 		currentClass=n.name.toString();
 		thisReg=new LlvmRegister("%this",new LlvmPointer(classes.get(currentClass)));
-		createConstructor();
+		if(n.methodList!=null)
+			createConstructor(n.methodList);
 		
 		util.List<MethodDecl> m=n.methodList;
 		while(m!=null){
@@ -491,7 +543,7 @@ public class Codegen extends VisitorAdapter{
 		assembler.add(new LlvmMalloc(lhs, classe, classe.className));
 		ArrayList<LlvmValue>args=new ArrayList<LlvmValue>();
 		args.add(new LlvmRegister(lhs.toString(), new LlvmPointer(classe)));
-		assembler.add(new LlvmCall(null, LlvmPrimitiveType.VOID, "@__"+className+"_"+className, args)); // XXX
+		// assembler.add(new LlvmCall(null, LlvmPrimitiveType.VOID, "@__"+className+"_"+className, args)); // XXX
 		return lhs;
 	}
 	// ------------------------------------------------------------------------------------------ Fluxos

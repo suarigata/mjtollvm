@@ -1,5 +1,5 @@
 @.formatting.string = private constant [4 x i8] c"%d\0A\00"
-%class.QS = type { i32 *, i32 }
+%class.QS = type { [4 x i8 *], i32 *, i32 }
 define i32 @main() {
 entry:
   %tmp0 = alloca i32
@@ -13,27 +13,44 @@ entry:
   %tmp7 = load i32 * %tmp0
   ret i32 %tmp7
 }
+define void @__QS_QS(%class.QS * %this) {
+entry:
+  %tmp8 = bitcast %class.QS * %this to [4 x i8 *] *
+  %tmp9 = bitcast i32 (%class.QS *, i32)* @__Start_QS to i8 *
+  %tmp10 = getelementptr [4 x i8 *] * %tmp8, i32 0, i32 0
+  store i8 * %tmp9, i8 * * %tmp10
+  %tmp11 = bitcast i32 (%class.QS *, i32, i32)* @__Sort_QS to i8 *
+  %tmp12 = getelementptr [4 x i8 *] * %tmp8, i32 0, i32 1
+  store i8 * %tmp11, i8 * * %tmp12
+  %tmp13 = bitcast i32 (%class.QS *)* @__Print_QS to i8 *
+  %tmp14 = getelementptr [4 x i8 *] * %tmp8, i32 0, i32 2
+  store i8 * %tmp13, i8 * * %tmp14
+  %tmp15 = bitcast i32 (%class.QS *, i32)* @__Init_QS to i8 *
+  %tmp16 = getelementptr [4 x i8 *] * %tmp8, i32 0, i32 3
+  store i8 * %tmp15, i8 * * %tmp16
+  ret void 
+}
 define i32 @__Start_QS(%class.QS * %this, i32 %sz) {
 entry:
   %_sz = alloca i32
   store i32 %sz, i32 * %_sz
   %_aux01 = alloca i32
-  %tmp8 = load i32 * %_sz
-  %tmp9 = call i32 (%class.QS *, i32)* @__Init_QS(%class.QS * %this, i32 %tmp8)
-  store i32 %tmp9, i32 * %_aux01
-  %tmp10 = call i32 (%class.QS *)* @__Print_QS(%class.QS * %this)
-  store i32 %tmp10, i32 * %_aux01
-  %tmp11 = getelementptr [4 x i8] * @.formatting.string, i32 0, i32 0
-  %tmp12 = call i32 (i8 *, ...)* @printf(i8 * %tmp11, i32 9999)
-  %tmp13 = getelementptr %class.QS * %this, i32 0, i32 1
-  %tmp14 = load i32 * %tmp13
-  %tmp15 = sub i32 %tmp14, 1
-  store i32 %tmp15, i32 * %_aux01
-  %tmp16 = load i32 * %_aux01
-  %tmp17 = call i32 (%class.QS *, i32, i32)* @__Sort_QS(%class.QS * %this, i32 0, i32 %tmp16)
-  store i32 %tmp17, i32 * %_aux01
-  %tmp18 = call i32 (%class.QS *)* @__Print_QS(%class.QS * %this)
+  %tmp17 = load i32 * %_sz
+  %tmp18 = call i32 (%class.QS *, i32)* @__Init_QS(%class.QS * %this, i32 %tmp17)
   store i32 %tmp18, i32 * %_aux01
+  %tmp19 = call i32 (%class.QS *)* @__Print_QS(%class.QS * %this)
+  store i32 %tmp19, i32 * %_aux01
+  %tmp20 = getelementptr [4 x i8] * @.formatting.string, i32 0, i32 0
+  %tmp21 = call i32 (i8 *, ...)* @printf(i8 * %tmp20, i32 9999)
+  %tmp22 = getelementptr %class.QS * %this, i32 0, i32 2
+  %tmp23 = load i32 * %tmp22
+  %tmp24 = sub i32 %tmp23, 1
+  store i32 %tmp24, i32 * %_aux01
+  %tmp25 = load i32 * %_aux01
+  %tmp26 = call i32 (%class.QS *, i32, i32)* @__Sort_QS(%class.QS * %this, i32 0, i32 %tmp25)
+  store i32 %tmp26, i32 * %_aux01
+  %tmp27 = call i32 (%class.QS *)* @__Print_QS(%class.QS * %this)
+  store i32 %tmp27, i32 * %_aux01
   ret i32 0
 }
 define i32 @__Sort_QS(%class.QS * %this, i32 %left, i32 %right) {
@@ -51,50 +68,50 @@ entry:
   %_cont02 = alloca i1
   %_aux03 = alloca i32
   store i32 0, i32 * %_t
-  %tmp19 = load i32 * %_left
-  %tmp20 = load i32 * %_right
-  %tmp21 = icmp slt i32 %tmp19, %tmp20
-  br i1 %tmp21, label %label0, label %label1
-label0:
-  %tmp22 = load i32 * %_right
-  %tmp23 = add i32 %tmp22, 1
-  %tmp24 = getelementptr %class.QS * %this, i32 0, i32 0
-  %tmp25 = load i32 * * %tmp24
-  %tmp27 = getelementptr i32 * %tmp25, i32 %tmp23
-  %tmp26 = load i32 * %tmp27
-  store i32 %tmp26, i32 * %_v
   %tmp28 = load i32 * %_left
-  %tmp29 = sub i32 %tmp28, 1
-  store i32 %tmp29, i32 * %_i
-  %tmp30 = load i32 * %_right
-  store i32 %tmp30, i32 * %_j
+  %tmp29 = load i32 * %_right
+  %tmp30 = icmp slt i32 %tmp28, %tmp29
+  br i1 %tmp30, label %label0, label %label1
+label0:
+  %tmp31 = load i32 * %_right
+  %tmp32 = add i32 %tmp31, 1
+  %tmp33 = getelementptr %class.QS * %this, i32 0, i32 1
+  %tmp34 = load i32 * * %tmp33
+  %tmp36 = getelementptr i32 * %tmp34, i32 %tmp32
+  %tmp35 = load i32 * %tmp36
+  store i32 %tmp35, i32 * %_v
+  %tmp37 = load i32 * %_left
+  %tmp38 = sub i32 %tmp37, 1
+  store i32 %tmp38, i32 * %_i
+  %tmp39 = load i32 * %_right
+  store i32 %tmp39, i32 * %_j
   store i1 true, i1 * %_cont01
   br label %label5
 label5:
-  %tmp31 = load i1 * %_cont01
-  br i1 %tmp31, label %label3, label %label4
+  %tmp40 = load i1 * %_cont01
+  br i1 %tmp40, label %label3, label %label4
 label3:
   store i1 true, i1 * %_cont02
   br label %label8
 label8:
-  %tmp32 = load i1 * %_cont02
-  br i1 %tmp32, label %label6, label %label7
+  %tmp41 = load i1 * %_cont02
+  br i1 %tmp41, label %label6, label %label7
 label6:
-  %tmp33 = load i32 * %_i
-  %tmp34 = add i32 %tmp33, 1
-  store i32 %tmp34, i32 * %_i
-  %tmp35 = load i32 * %_i
-  %tmp36 = add i32 %tmp35, 1
-  %tmp37 = getelementptr %class.QS * %this, i32 0, i32 0
-  %tmp38 = load i32 * * %tmp37
-  %tmp40 = getelementptr i32 * %tmp38, i32 %tmp36
-  %tmp39 = load i32 * %tmp40
-  store i32 %tmp39, i32 * %_aux03
-  %tmp41 = load i32 * %_aux03
-  %tmp42 = load i32 * %_v
-  %tmp43 = icmp slt i32 %tmp41, %tmp42
-  %tmp44 = xor i1 %tmp43, -1
-  br i1 %tmp44, label %label9, label %label10
+  %tmp42 = load i32 * %_i
+  %tmp43 = add i32 %tmp42, 1
+  store i32 %tmp43, i32 * %_i
+  %tmp44 = load i32 * %_i
+  %tmp45 = add i32 %tmp44, 1
+  %tmp46 = getelementptr %class.QS * %this, i32 0, i32 1
+  %tmp47 = load i32 * * %tmp46
+  %tmp49 = getelementptr i32 * %tmp47, i32 %tmp45
+  %tmp48 = load i32 * %tmp49
+  store i32 %tmp48, i32 * %_aux03
+  %tmp50 = load i32 * %_aux03
+  %tmp51 = load i32 * %_v
+  %tmp52 = icmp slt i32 %tmp50, %tmp51
+  %tmp53 = xor i1 %tmp52, -1
+  br i1 %tmp53, label %label9, label %label10
 label9:
   store i1 false, i1 * %_cont02
   br label %label11
@@ -107,24 +124,24 @@ label7:
   store i1 true, i1 * %_cont02
   br label %label14
 label14:
-  %tmp45 = load i1 * %_cont02
-  br i1 %tmp45, label %label12, label %label13
+  %tmp54 = load i1 * %_cont02
+  br i1 %tmp54, label %label12, label %label13
 label12:
-  %tmp46 = load i32 * %_j
-  %tmp47 = sub i32 %tmp46, 1
-  store i32 %tmp47, i32 * %_j
-  %tmp48 = load i32 * %_j
-  %tmp49 = add i32 %tmp48, 1
-  %tmp50 = getelementptr %class.QS * %this, i32 0, i32 0
-  %tmp51 = load i32 * * %tmp50
-  %tmp53 = getelementptr i32 * %tmp51, i32 %tmp49
-  %tmp52 = load i32 * %tmp53
-  store i32 %tmp52, i32 * %_aux03
-  %tmp54 = load i32 * %_v
-  %tmp55 = load i32 * %_aux03
-  %tmp56 = icmp slt i32 %tmp54, %tmp55
-  %tmp57 = xor i1 %tmp56, -1
-  br i1 %tmp57, label %label15, label %label16
+  %tmp55 = load i32 * %_j
+  %tmp56 = sub i32 %tmp55, 1
+  store i32 %tmp56, i32 * %_j
+  %tmp57 = load i32 * %_j
+  %tmp58 = add i32 %tmp57, 1
+  %tmp59 = getelementptr %class.QS * %this, i32 0, i32 1
+  %tmp60 = load i32 * * %tmp59
+  %tmp62 = getelementptr i32 * %tmp60, i32 %tmp58
+  %tmp61 = load i32 * %tmp62
+  store i32 %tmp61, i32 * %_aux03
+  %tmp63 = load i32 * %_v
+  %tmp64 = load i32 * %_aux03
+  %tmp65 = icmp slt i32 %tmp63, %tmp64
+  %tmp66 = xor i1 %tmp65, -1
+  br i1 %tmp66, label %label15, label %label16
 label15:
   store i1 false, i1 * %_cont02
   br label %label17
@@ -134,37 +151,37 @@ label16:
 label17:
   br label %label14
 label13:
-  %tmp58 = load i32 * %_i
-  %tmp59 = add i32 %tmp58, 1
-  %tmp60 = getelementptr %class.QS * %this, i32 0, i32 0
-  %tmp61 = load i32 * * %tmp60
-  %tmp63 = getelementptr i32 * %tmp61, i32 %tmp59
-  %tmp62 = load i32 * %tmp63
-  store i32 %tmp62, i32 * %_t
-  %tmp64 = load i32 * %_i
-  %tmp65 = add i32 %tmp64, 1
-  %tmp68 = getelementptr %class.QS * %this, i32 0, i32 0
-  %tmp67 = load i32 * * %tmp68
-  %tmp66 = getelementptr i32 * %tmp67, i32 %tmp65
-  %tmp69 = load i32 * %_j
-  %tmp70 = add i32 %tmp69, 1
-  %tmp71 = getelementptr %class.QS * %this, i32 0, i32 0
-  %tmp72 = load i32 * * %tmp71
-  %tmp74 = getelementptr i32 * %tmp72, i32 %tmp70
-  %tmp73 = load i32 * %tmp74
-  store i32 %tmp73, i32 * %tmp66
-  %tmp75 = load i32 * %_j
-  %tmp76 = add i32 %tmp75, 1
-  %tmp79 = getelementptr %class.QS * %this, i32 0, i32 0
-  %tmp78 = load i32 * * %tmp79
-  %tmp77 = getelementptr i32 * %tmp78, i32 %tmp76
-  %tmp80 = load i32 * %_t
-  store i32 %tmp80, i32 * %tmp77
-  %tmp81 = load i32 * %_j
-  %tmp82 = load i32 * %_i
-  %tmp83 = add i32 %tmp82, 1
-  %tmp84 = icmp slt i32 %tmp81, %tmp83
-  br i1 %tmp84, label %label18, label %label19
+  %tmp67 = load i32 * %_i
+  %tmp68 = add i32 %tmp67, 1
+  %tmp69 = getelementptr %class.QS * %this, i32 0, i32 1
+  %tmp70 = load i32 * * %tmp69
+  %tmp72 = getelementptr i32 * %tmp70, i32 %tmp68
+  %tmp71 = load i32 * %tmp72
+  store i32 %tmp71, i32 * %_t
+  %tmp73 = load i32 * %_i
+  %tmp74 = add i32 %tmp73, 1
+  %tmp77 = getelementptr %class.QS * %this, i32 0, i32 1
+  %tmp76 = load i32 * * %tmp77
+  %tmp75 = getelementptr i32 * %tmp76, i32 %tmp74
+  %tmp78 = load i32 * %_j
+  %tmp79 = add i32 %tmp78, 1
+  %tmp80 = getelementptr %class.QS * %this, i32 0, i32 1
+  %tmp81 = load i32 * * %tmp80
+  %tmp83 = getelementptr i32 * %tmp81, i32 %tmp79
+  %tmp82 = load i32 * %tmp83
+  store i32 %tmp82, i32 * %tmp75
+  %tmp84 = load i32 * %_j
+  %tmp85 = add i32 %tmp84, 1
+  %tmp88 = getelementptr %class.QS * %this, i32 0, i32 1
+  %tmp87 = load i32 * * %tmp88
+  %tmp86 = getelementptr i32 * %tmp87, i32 %tmp85
+  %tmp89 = load i32 * %_t
+  store i32 %tmp89, i32 * %tmp86
+  %tmp90 = load i32 * %_j
+  %tmp91 = load i32 * %_i
+  %tmp92 = add i32 %tmp91, 1
+  %tmp93 = icmp slt i32 %tmp90, %tmp92
+  br i1 %tmp93, label %label18, label %label19
 label18:
   store i1 false, i1 * %_cont01
   br label %label20
@@ -174,47 +191,47 @@ label19:
 label20:
   br label %label5
 label4:
-  %tmp85 = load i32 * %_j
-  %tmp86 = add i32 %tmp85, 1
-  %tmp89 = getelementptr %class.QS * %this, i32 0, i32 0
-  %tmp88 = load i32 * * %tmp89
-  %tmp87 = getelementptr i32 * %tmp88, i32 %tmp86
-  %tmp90 = load i32 * %_i
-  %tmp91 = add i32 %tmp90, 1
-  %tmp92 = getelementptr %class.QS * %this, i32 0, i32 0
-  %tmp93 = load i32 * * %tmp92
-  %tmp95 = getelementptr i32 * %tmp93, i32 %tmp91
-  %tmp94 = load i32 * %tmp95
-  store i32 %tmp94, i32 * %tmp87
-  %tmp96 = load i32 * %_i
-  %tmp97 = add i32 %tmp96, 1
-  %tmp100 = getelementptr %class.QS * %this, i32 0, i32 0
-  %tmp99 = load i32 * * %tmp100
-  %tmp98 = getelementptr i32 * %tmp99, i32 %tmp97
-  %tmp101 = load i32 * %_right
-  %tmp102 = add i32 %tmp101, 1
-  %tmp103 = getelementptr %class.QS * %this, i32 0, i32 0
-  %tmp104 = load i32 * * %tmp103
-  %tmp106 = getelementptr i32 * %tmp104, i32 %tmp102
-  %tmp105 = load i32 * %tmp106
-  store i32 %tmp105, i32 * %tmp98
-  %tmp107 = load i32 * %_right
-  %tmp108 = add i32 %tmp107, 1
-  %tmp111 = getelementptr %class.QS * %this, i32 0, i32 0
-  %tmp110 = load i32 * * %tmp111
-  %tmp109 = getelementptr i32 * %tmp110, i32 %tmp108
-  %tmp112 = load i32 * %_t
-  store i32 %tmp112, i32 * %tmp109
-  %tmp113 = load i32 * %_left
-  %tmp114 = load i32 * %_i
-  %tmp115 = sub i32 %tmp114, 1
-  %tmp116 = call i32 (%class.QS *, i32, i32)* @__Sort_QS(%class.QS * %this, i32 %tmp113, i32 %tmp115)
-  store i32 %tmp116, i32 * %_nt
-  %tmp117 = load i32 * %_i
-  %tmp118 = add i32 %tmp117, 1
-  %tmp119 = load i32 * %_right
-  %tmp120 = call i32 (%class.QS *, i32, i32)* @__Sort_QS(%class.QS * %this, i32 %tmp118, i32 %tmp119)
-  store i32 %tmp120, i32 * %_nt
+  %tmp94 = load i32 * %_j
+  %tmp95 = add i32 %tmp94, 1
+  %tmp98 = getelementptr %class.QS * %this, i32 0, i32 1
+  %tmp97 = load i32 * * %tmp98
+  %tmp96 = getelementptr i32 * %tmp97, i32 %tmp95
+  %tmp99 = load i32 * %_i
+  %tmp100 = add i32 %tmp99, 1
+  %tmp101 = getelementptr %class.QS * %this, i32 0, i32 1
+  %tmp102 = load i32 * * %tmp101
+  %tmp104 = getelementptr i32 * %tmp102, i32 %tmp100
+  %tmp103 = load i32 * %tmp104
+  store i32 %tmp103, i32 * %tmp96
+  %tmp105 = load i32 * %_i
+  %tmp106 = add i32 %tmp105, 1
+  %tmp109 = getelementptr %class.QS * %this, i32 0, i32 1
+  %tmp108 = load i32 * * %tmp109
+  %tmp107 = getelementptr i32 * %tmp108, i32 %tmp106
+  %tmp110 = load i32 * %_right
+  %tmp111 = add i32 %tmp110, 1
+  %tmp112 = getelementptr %class.QS * %this, i32 0, i32 1
+  %tmp113 = load i32 * * %tmp112
+  %tmp115 = getelementptr i32 * %tmp113, i32 %tmp111
+  %tmp114 = load i32 * %tmp115
+  store i32 %tmp114, i32 * %tmp107
+  %tmp116 = load i32 * %_right
+  %tmp117 = add i32 %tmp116, 1
+  %tmp120 = getelementptr %class.QS * %this, i32 0, i32 1
+  %tmp119 = load i32 * * %tmp120
+  %tmp118 = getelementptr i32 * %tmp119, i32 %tmp117
+  %tmp121 = load i32 * %_t
+  store i32 %tmp121, i32 * %tmp118
+  %tmp122 = load i32 * %_left
+  %tmp123 = load i32 * %_i
+  %tmp124 = sub i32 %tmp123, 1
+  %tmp125 = call i32 (%class.QS *, i32, i32)* @__Sort_QS(%class.QS * %this, i32 %tmp122, i32 %tmp124)
+  store i32 %tmp125, i32 * %_nt
+  %tmp126 = load i32 * %_i
+  %tmp127 = add i32 %tmp126, 1
+  %tmp128 = load i32 * %_right
+  %tmp129 = call i32 (%class.QS *, i32, i32)* @__Sort_QS(%class.QS * %this, i32 %tmp127, i32 %tmp128)
+  store i32 %tmp129, i32 * %_nt
   br label %label2
 label1:
   store i32 0, i32 * %_nt
@@ -228,23 +245,23 @@ entry:
   store i32 0, i32 * %_j
   br label %label23
 label23:
-  %tmp121 = load i32 * %_j
-  %tmp122 = getelementptr %class.QS * %this, i32 0, i32 1
-  %tmp123 = load i32 * %tmp122
-  %tmp124 = icmp slt i32 %tmp121, %tmp123
-  br i1 %tmp124, label %label21, label %label22
+  %tmp130 = load i32 * %_j
+  %tmp131 = getelementptr %class.QS * %this, i32 0, i32 2
+  %tmp132 = load i32 * %tmp131
+  %tmp133 = icmp slt i32 %tmp130, %tmp132
+  br i1 %tmp133, label %label21, label %label22
 label21:
-  %tmp125 = load i32 * %_j
-  %tmp126 = add i32 %tmp125, 1
-  %tmp127 = getelementptr %class.QS * %this, i32 0, i32 0
-  %tmp128 = load i32 * * %tmp127
-  %tmp130 = getelementptr i32 * %tmp128, i32 %tmp126
-  %tmp129 = load i32 * %tmp130
-  %tmp131 = getelementptr [4 x i8] * @.formatting.string, i32 0, i32 0
-  %tmp132 = call i32 (i8 *, ...)* @printf(i8 * %tmp131, i32 %tmp129)
-  %tmp133 = load i32 * %_j
-  %tmp134 = add i32 %tmp133, 1
-  store i32 %tmp134, i32 * %_j
+  %tmp134 = load i32 * %_j
+  %tmp135 = add i32 %tmp134, 1
+  %tmp136 = getelementptr %class.QS * %this, i32 0, i32 1
+  %tmp137 = load i32 * * %tmp136
+  %tmp139 = getelementptr i32 * %tmp137, i32 %tmp135
+  %tmp138 = load i32 * %tmp139
+  %tmp140 = getelementptr [4 x i8] * @.formatting.string, i32 0, i32 0
+  %tmp141 = call i32 (i8 *, ...)* @printf(i8 * %tmp140, i32 %tmp138)
+  %tmp142 = load i32 * %_j
+  %tmp143 = add i32 %tmp142, 1
+  store i32 %tmp143, i32 * %_j
   br label %label23
 label22:
   ret i32 0
@@ -253,57 +270,57 @@ define i32 @__Init_QS(%class.QS * %this, i32 %sz) {
 entry:
   %_sz = alloca i32
   store i32 %sz, i32 * %_sz
-  %tmp135 = load i32 * %_sz
-  %tmp136 = getelementptr %class.QS * %this, i32 0, i32 1
-  store i32 %tmp135, i32 * %tmp136
-  %tmp137 = load i32 * %_sz
-  %tmp138 = add i32 %tmp137, 1
-  %tmp140 = mul i32 4, %tmp138
-  %tmp141 = call i8* @malloc ( i32 %tmp140)
-  %tmp139 = bitcast i8* %tmp141 to i32*
-  store i32 %tmp138, i32 * %tmp139
-  %tmp142 = getelementptr %class.QS * %this, i32 0, i32 0
-  store i32 * %tmp139, i32 * * %tmp142
-  %tmp145 = getelementptr %class.QS * %this, i32 0, i32 0
-  %tmp144 = load i32 * * %tmp145
-  %tmp143 = getelementptr i32 * %tmp144, i32 1
-  store i32 20, i32 * %tmp143
-  %tmp148 = getelementptr %class.QS * %this, i32 0, i32 0
-  %tmp147 = load i32 * * %tmp148
-  %tmp146 = getelementptr i32 * %tmp147, i32 2
-  store i32 7, i32 * %tmp146
-  %tmp151 = getelementptr %class.QS * %this, i32 0, i32 0
-  %tmp150 = load i32 * * %tmp151
-  %tmp149 = getelementptr i32 * %tmp150, i32 3
-  store i32 12, i32 * %tmp149
-  %tmp154 = getelementptr %class.QS * %this, i32 0, i32 0
+  %tmp144 = load i32 * %_sz
+  %tmp145 = getelementptr %class.QS * %this, i32 0, i32 2
+  store i32 %tmp144, i32 * %tmp145
+  %tmp146 = load i32 * %_sz
+  %tmp147 = add i32 %tmp146, 1
+  %tmp149 = mul i32 4, %tmp147
+  %tmp150 = call i8* @malloc ( i32 %tmp149)
+  %tmp148 = bitcast i8* %tmp150 to i32*
+  store i32 %tmp147, i32 * %tmp148
+  %tmp151 = getelementptr %class.QS * %this, i32 0, i32 1
+  store i32 * %tmp148, i32 * * %tmp151
+  %tmp154 = getelementptr %class.QS * %this, i32 0, i32 1
   %tmp153 = load i32 * * %tmp154
-  %tmp152 = getelementptr i32 * %tmp153, i32 4
-  store i32 18, i32 * %tmp152
-  %tmp157 = getelementptr %class.QS * %this, i32 0, i32 0
+  %tmp152 = getelementptr i32 * %tmp153, i32 1
+  store i32 20, i32 * %tmp152
+  %tmp157 = getelementptr %class.QS * %this, i32 0, i32 1
   %tmp156 = load i32 * * %tmp157
-  %tmp155 = getelementptr i32 * %tmp156, i32 5
-  store i32 2, i32 * %tmp155
-  %tmp160 = getelementptr %class.QS * %this, i32 0, i32 0
+  %tmp155 = getelementptr i32 * %tmp156, i32 2
+  store i32 7, i32 * %tmp155
+  %tmp160 = getelementptr %class.QS * %this, i32 0, i32 1
   %tmp159 = load i32 * * %tmp160
-  %tmp158 = getelementptr i32 * %tmp159, i32 6
-  store i32 11, i32 * %tmp158
-  %tmp163 = getelementptr %class.QS * %this, i32 0, i32 0
+  %tmp158 = getelementptr i32 * %tmp159, i32 3
+  store i32 12, i32 * %tmp158
+  %tmp163 = getelementptr %class.QS * %this, i32 0, i32 1
   %tmp162 = load i32 * * %tmp163
-  %tmp161 = getelementptr i32 * %tmp162, i32 7
-  store i32 6, i32 * %tmp161
-  %tmp166 = getelementptr %class.QS * %this, i32 0, i32 0
+  %tmp161 = getelementptr i32 * %tmp162, i32 4
+  store i32 18, i32 * %tmp161
+  %tmp166 = getelementptr %class.QS * %this, i32 0, i32 1
   %tmp165 = load i32 * * %tmp166
-  %tmp164 = getelementptr i32 * %tmp165, i32 8
-  store i32 9, i32 * %tmp164
-  %tmp169 = getelementptr %class.QS * %this, i32 0, i32 0
+  %tmp164 = getelementptr i32 * %tmp165, i32 5
+  store i32 2, i32 * %tmp164
+  %tmp169 = getelementptr %class.QS * %this, i32 0, i32 1
   %tmp168 = load i32 * * %tmp169
-  %tmp167 = getelementptr i32 * %tmp168, i32 9
-  store i32 19, i32 * %tmp167
-  %tmp172 = getelementptr %class.QS * %this, i32 0, i32 0
+  %tmp167 = getelementptr i32 * %tmp168, i32 6
+  store i32 11, i32 * %tmp167
+  %tmp172 = getelementptr %class.QS * %this, i32 0, i32 1
   %tmp171 = load i32 * * %tmp172
-  %tmp170 = getelementptr i32 * %tmp171, i32 10
-  store i32 5, i32 * %tmp170
+  %tmp170 = getelementptr i32 * %tmp171, i32 7
+  store i32 6, i32 * %tmp170
+  %tmp175 = getelementptr %class.QS * %this, i32 0, i32 1
+  %tmp174 = load i32 * * %tmp175
+  %tmp173 = getelementptr i32 * %tmp174, i32 8
+  store i32 9, i32 * %tmp173
+  %tmp178 = getelementptr %class.QS * %this, i32 0, i32 1
+  %tmp177 = load i32 * * %tmp178
+  %tmp176 = getelementptr i32 * %tmp177, i32 9
+  store i32 19, i32 * %tmp176
+  %tmp181 = getelementptr %class.QS * %this, i32 0, i32 1
+  %tmp180 = load i32 * * %tmp181
+  %tmp179 = getelementptr i32 * %tmp180, i32 10
+  store i32 5, i32 * %tmp179
   ret i32 0
 }
 declare i32 @printf (i8 *, ...)
